@@ -1,9 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/dtschannen/Tesla-Wrap-Studio"><img src="src/assets/logo.png" alt="Tesla Wrap Studio" width="200"></a>
-  <br>
-  Tesla Wrap Studio
-  <br>
+  <a href="https://github.com/dtschannen/Tesla-Wrap-Studio"><img src="src/assets/logo.png" alt="Tesla Wrap Studio" width="300"></a>
 </h1>
 
 <h4 align="center">A professional car wrap design tool for Tesla vehicles built with <a href="https://react.dev" target="_blank">React</a> and <a href="https://konvajs.org" target="_blank">Konva</a>.</h4>
@@ -21,7 +18,7 @@
   <a href="#license">License</a>
 </p>
 
-![Tesla Wrap Studio Screenshot](docs/screenshot.png)
+![Tesla Wrap Studio Screenshot](docs/screenshot1.png)
 
 Tesla’s 2025 Holiday Update lets owners customize the in-car 3D model with their own wraps. Tesla published the 2D textures in their official repo, but without graphic tooling it’s hard to use. Tesla Wrap Studio makes this easy for everyone—no pro software required—and remains free and open source. See the Tesla assets here: [teslamotors/custom-wraps](https://github.com/teslamotors/custom-wraps). 
 
