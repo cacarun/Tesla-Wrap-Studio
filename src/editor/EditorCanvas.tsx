@@ -517,7 +517,7 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       {/* Canvas Area */}
       <div 
         ref={canvasAreaRef} 
-        className="relative flex-1 flex items-center justify-center overflow-auto canvas-scrollbar" 
+        className="relative flex-1 overflow-auto canvas-scrollbar" 
         style={{ 
           minHeight: 0,
           ...(canvasBackground === 'gray' 
@@ -541,18 +541,30 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
           ),
         }}
       >
+        {/* Wrapper to ensure proper scrolling when zoomed - must be at least the scaled size */}
         <div
           style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'center center',
-            width: 1024,
-            height: 1024,
-            borderRadius: 0,
+            width: `${1024 * scale}px`,
+            height: `${1024 * scale}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             flexShrink: 0,
-            aspectRatio: '1 / 1',
+            margin: 'auto',
           }}
-          className="overflow-hidden canvas-wrapper"
         >
+          <div
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+              width: 1024,
+              height: 1024,
+              borderRadius: 0,
+              flexShrink: 0,
+              aspectRatio: '1 / 1',
+            }}
+            className="overflow-hidden canvas-wrapper"
+          >
           <Stage
             ref={stageRef as React.RefObject<StageType>}
             width={1024}
@@ -664,9 +676,10 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
             )}
           </Layer>
           </Stage>
-          <BrushTool stageRef={stageRef} />
-          <FillTool stageRef={stageRef} />
+          </div>
         </div>
+        <BrushTool stageRef={stageRef} />
+        <FillTool stageRef={stageRef} />
       </div>
 
       {/* Floating Zoom Controls */}
