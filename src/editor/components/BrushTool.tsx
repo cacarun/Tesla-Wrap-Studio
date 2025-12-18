@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { useEditorStore } from '../state/useEditorStore';
 import type { BrushStroke, BrushLayer } from '../state/editorTypes';
-import { loadImage } from '../../utils/image';
+import { loadImage, calculateImageScale } from '../../utils/image';
 
 interface BrushToolProps {
   stageRef: React.RefObject<StageType | null>;
@@ -451,6 +451,15 @@ export const BrushTool = ({ stageRef }: BrushToolProps) => {
                 const src = event.target?.result as string;
                 try {
                   const img = await loadImage(src);
+                  // Calculate scale to make long side ~300px
+                  const scale = calculateImageScale(img, 300);
+                  
+                  // Center the image on canvas (1024x1024)
+                  const scaledWidth = img.width * scale;
+                  const scaledHeight = img.height * scale;
+                  const x = (1024 - scaledWidth) / 2;
+                  const y = (1024 - scaledHeight) / 2;
+                  
                   addLayer({
                     type: 'image',
                     name: nextLayerName('image'),
@@ -459,11 +468,11 @@ export const BrushTool = ({ stageRef }: BrushToolProps) => {
                     visible: true,
                     locked: false,
                     opacity: 1,
-                    x: 100,
-                    y: 100,
+                    x,
+                    y,
                     rotation: 0,
-                    scaleX: 1,
-                    scaleY: 1,
+                    scaleX: scale,
+                    scaleY: scale,
                   });
                   setActiveTool('select');
                 } catch (error) {
