@@ -35,8 +35,9 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState('#F5F5F5');
   const [customColorInput, setCustomColorInput] = useState('#F5F5F5');
+  const [projectName, setProjectNameLocal] = useState('');
   
-  const { setCurrentModelId, setBaseColor, layers, deleteLayer } = useEditorStore();
+  const { setCurrentModelId, setBaseColor, resetProject, setProjectName } = useEditorStore();
 
   const handleSelectModel = (modelId: string) => {
     setSelectedModelId(modelId);
@@ -51,17 +52,23 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
   const handleCreate = () => {
     if (!selectedModelId) return;
     
-    // Clear all existing layers
-    layers.forEach(layer => deleteLayer(layer.id));
+    // Reset project (clears all layers and history)
+    resetProject();
     
     // Set the new model and color
     setCurrentModelId(selectedModelId);
     setBaseColor(selectedColor);
     
+    // Set project name
+    const model = carModels.find(m => m.id === selectedModelId);
+    const name = projectName.trim() || `${model?.name || 'Tesla'} Wrap Design`;
+    setProjectName(name);
+    
     // Reset dialog state
     setStep('model');
     setSelectedModelId(null);
     setSelectedColor('#F5F5F5');
+    setProjectNameLocal('');
     
     onClose();
   };
@@ -133,7 +140,23 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {step === 'model' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="space-y-4">
+              {/* Project Name Input */}
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">Project Name (optional)</label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectNameLocal(e.target.value)}
+                  placeholder="My Tesla Wrap Design"
+                  className="w-full px-4 py-3 bg-[#2c2c2e] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-transparent"
+                />
+              </div>
+              
+              {/* Model Selection */}
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">Select Tesla Model</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {carModels.map((model) => (
                 <button
                   key={model.id}
@@ -169,6 +192,8 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
                   </div>
                 </button>
               ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
