@@ -1,5 +1,5 @@
 import { useEffect, useRef, forwardRef, useState } from 'react';
-import { Stage, Layer, Image as KonvaImage, Rect, Group } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Rect, Group, Line } from 'react-konva';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { useEditorStore } from './state/useEditorStore';
 import { TextLayer } from './components/layers/TextLayer';
@@ -36,6 +36,8 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
   const [canvasBackground, setCanvasBackground] = useState<CanvasBackground>('gray');
   const [showBackgroundDropdown, setShowBackgroundDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showVerticalCenterGuide, setShowVerticalCenterGuide] = useState(false);
+  const [showHorizontalCenterGuide, setShowHorizontalCenterGuide] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -223,18 +225,144 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
     }
   };
 
+  const handleDragMove = (e: any) => {
+    const node = e.target;
+    const stage = node.getStage();
+    if (!stage) return;
+
+    // Canvas is 1024x1024, centers are at x = 512, y = 512
+    const CENTER_X = 512;
+    const CENTER_Y = 512;
+    const SNAP_THRESHOLD = 10; // pixels
+    
+    // Get the bounding box of the node (accounts for rotation and scale)
+    const box = node.getClientRect();
+    const layerCenterX = box.x + box.width / 2;
+    const layerCenterY = box.y + box.height / 2;
+    
+    let snappedX = node.x();
+    let snappedY = node.y();
+    let showVertical = false;
+    let showHorizontal = false;
+    
+    // Check vertical center snapping
+    const distanceToVerticalCenter = Math.abs(layerCenterY - CENTER_Y);
+    if (distanceToVerticalCenter < SNAP_THRESHOLD) {
+      const currentY = node.y();
+      const offsetY = CENTER_Y - layerCenterY;
+      snappedY = currentY + offsetY;
+      node.y(snappedY);
+      showVertical = true;
+    }
+    
+    // Check horizontal center snapping
+    const distanceToHorizontalCenter = Math.abs(layerCenterX - CENTER_X);
+    if (distanceToHorizontalCenter < SNAP_THRESHOLD) {
+      const currentX = node.x();
+      const offsetX = CENTER_X - layerCenterX;
+      snappedX = currentX + offsetX;
+      node.x(snappedX);
+      showHorizontal = true;
+    }
+    
+    setShowVerticalCenterGuide(showVertical);
+    setShowHorizontalCenterGuide(showHorizontal);
+    
+    // Force redraw to show guide lines
+    stage.batchDraw();
+  };
+
   const handleDragEnd = (e: any, layerId: string) => {
     const node = e.target;
+    const stage = node.getStage();
+    
+    // Canvas is 1024x1024, centers are at x = 512, y = 512
+    const CENTER_X = 512;
+    const CENTER_Y = 512;
+    const SNAP_THRESHOLD = 10; // pixels
+    
+    // Get the bounding box of the node (accounts for rotation and scale)
+    const box = node.getClientRect();
+    const layerCenterX = box.x + box.width / 2;
+    const layerCenterY = box.y + box.height / 2;
+    
+    let finalX = node.x();
+    let finalY = node.y();
+    
+    // Check vertical center snapping
+    const distanceToVerticalCenter = Math.abs(layerCenterY - CENTER_Y);
+    if (distanceToVerticalCenter < SNAP_THRESHOLD) {
+      const currentY = node.y();
+      const offsetY = CENTER_Y - layerCenterY;
+      finalY = currentY + offsetY;
+      node.y(finalY);
+    }
+    
+    // Check horizontal center snapping
+    const distanceToHorizontalCenter = Math.abs(layerCenterX - CENTER_X);
+    if (distanceToHorizontalCenter < SNAP_THRESHOLD) {
+      const currentX = node.x();
+      const offsetX = CENTER_X - layerCenterX;
+      finalX = currentX + offsetX;
+      node.x(finalX);
+    }
+    
     // Restore opacity
     node.opacity(layers.find(l => l.id === layerId)?.opacity || 1);
-    const stage = node.getStage();
     if (stage) {
       stage.container().style.cursor = 'default';
     }
+    
+    // Hide guide lines
+    setShowVerticalCenterGuide(false);
+    setShowHorizontalCenterGuide(false);
+    
     updateLayer(layerId, {
-      x: node.x(),
-      y: node.y(),
+      x: finalX,
+      y: finalY,
     });
+  };
+
+  const handleTransformMove = (node: any) => {
+    const stage = node.getStage();
+    if (!stage) return;
+
+    // Canvas is 1024x1024, centers are at x = 512, y = 512
+    const CENTER_X = 512;
+    const CENTER_Y = 512;
+    const SNAP_THRESHOLD = 10; // pixels
+    
+    // Get the bounding box of the node (accounts for rotation and scale)
+    const box = node.getClientRect();
+    const layerCenterX = box.x + box.width / 2;
+    const layerCenterY = box.y + box.height / 2;
+    
+    let showVertical = false;
+    let showHorizontal = false;
+    
+    // Check vertical center snapping
+    const distanceToVerticalCenter = Math.abs(layerCenterY - CENTER_Y);
+    if (distanceToVerticalCenter < SNAP_THRESHOLD) {
+      const currentY = node.y();
+      const offsetY = CENTER_Y - layerCenterY;
+      node.y(currentY + offsetY);
+      showVertical = true;
+    }
+    
+    // Check horizontal center snapping
+    const distanceToHorizontalCenter = Math.abs(layerCenterX - CENTER_X);
+    if (distanceToHorizontalCenter < SNAP_THRESHOLD) {
+      const currentX = node.x();
+      const offsetX = CENTER_X - layerCenterX;
+      node.x(currentX + offsetX);
+      showHorizontal = true;
+    }
+    
+    setShowVerticalCenterGuide(showVertical);
+    setShowHorizontalCenterGuide(showHorizontal);
+    
+    // Force redraw to show guide lines
+    stage.batchDraw();
   };
 
   const handleTransformStart = (e: any, layerId: string) => {
@@ -270,6 +398,38 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       return;
     }
     
+    // Check for center snapping
+    const CENTER_X = 512;
+    const CENTER_Y = 512;
+    const SNAP_THRESHOLD = 10;
+    const box = node.getClientRect();
+    const layerCenterX = box.x + box.width / 2;
+    const layerCenterY = box.y + box.height / 2;
+    let finalX = node.x();
+    let finalY = node.y();
+    
+    // Check vertical center snapping
+    const distanceToVerticalCenter = Math.abs(layerCenterY - CENTER_Y);
+    if (distanceToVerticalCenter < SNAP_THRESHOLD) {
+      const currentY = node.y();
+      const offsetY = CENTER_Y - layerCenterY;
+      finalY = currentY + offsetY;
+      node.y(finalY);
+    }
+    
+    // Check horizontal center snapping
+    const distanceToHorizontalCenter = Math.abs(layerCenterX - CENTER_X);
+    if (distanceToHorizontalCenter < SNAP_THRESHOLD) {
+      const currentX = node.x();
+      const offsetX = CENTER_X - layerCenterX;
+      finalX = currentX + offsetX;
+      node.x(finalX);
+    }
+    
+    // Hide guide lines
+    setShowVerticalCenterGuide(false);
+    setShowHorizontalCenterGuide(false);
+    
     // For rect layers, update actual width/height based on scale (Photoshop-like behavior)
     if (layer.type === 'rect' && transformStartDataRef.current) {
       const startData = transformStartDataRef.current;
@@ -283,8 +443,8 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       const newHeight = Math.abs(originalHeight * (node.scaleY() / originalScaleY));
       
       updateLayer(layerId, {
-        x: node.x(),
-        y: node.y(),
+        x: finalX,
+        y: finalY,
         rotation: node.rotation(),
         width: newWidth,
         height: newHeight,
@@ -294,8 +454,8 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
     } else {
       // For other layer types, use scaleX/scaleY
       updateLayer(layerId, {
-        x: node.x(),
-        y: node.y(),
+        x: finalX,
+        y: finalY,
         rotation: node.rotation(),
         scaleX: node.scaleX(),
         scaleY: node.scaleY(),
@@ -433,6 +593,7 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
                   onClick: (e: any) => handleLayerClick(e, layer.id),
                   onTap: (e: any) => handleLayerClick(e, layer.id),
                   onDragStart: isBrushLayer ? undefined : handleDragStart,
+                  onDragMove: isBrushLayer ? undefined : handleDragMove,
                   onDragEnd: isBrushLayer ? undefined : (e: any) => handleDragEnd(e, layer.id),
                   onTransformStart: isBrushLayer ? undefined : (e: any) => handleTransformStart(e, layer.id),
                   onTransformEnd: isBrushLayer ? undefined : (e: any) => handleTransformEnd(e, layer.id),
@@ -469,10 +630,38 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
             </Group>
 
             {/* Transformer on top (not masked) */}
-            <TransformerWrapper selectedLayerId={selectedLayerId} layers={layers} />
+            <TransformerWrapper 
+              selectedLayerId={selectedLayerId} 
+              layers={layers}
+              onTransformMove={handleTransformMove}
+            />
             
             {/* Brush Cursor (on top of everything, not masked) */}
             <BrushCursor stageRef={stageRef} />
+          </Layer>
+          
+          {/* Guide Lines Layer (separate, not masked) */}
+          <Layer>
+            {showVerticalCenterGuide && (
+              <Line
+                points={[0, 512, 1024, 512]}
+                stroke="#00FFFF"
+                strokeWidth={1}
+                listening={false}
+                dash={[4, 4]}
+                opacity={0.8}
+              />
+            )}
+            {showHorizontalCenterGuide && (
+              <Line
+                points={[512, 0, 512, 1024]}
+                stroke="#00FFFF"
+                strokeWidth={1}
+                listening={false}
+                dash={[4, 4]}
+                opacity={0.8}
+              />
+            )}
           </Layer>
           </Stage>
           <BrushTool stageRef={stageRef} />

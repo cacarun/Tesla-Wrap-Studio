@@ -4,6 +4,7 @@ import logo from '../assets/logo.png';
 import { exportPng } from '../utils/exportPng';
 import { carModels } from '../data/carModels';
 import { saveProjectToFile, loadProjectFromFile, getProjectFileAccept } from '../utils/projectFile';
+import { calculateImageScale } from '../utils/image';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { DownloadDialog } from './components/DownloadDialog';
@@ -208,6 +209,15 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
+        // Calculate scale to make long side ~300px
+        const scale = calculateImageScale(img, 300);
+        
+        // Center the image on canvas (1024x1024)
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        const x = (1024 - scaledWidth) / 2;
+        const y = (1024 - scaledHeight) / 2;
+        
         // Add as a new image layer
         addLayer({
           type: 'image',
@@ -217,11 +227,11 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
           visible: true,
           locked: false,
           opacity: 1,
-          x: 0,
-          y: 0,
+          x,
+          y,
           rotation: 0,
-          scaleX: 1,
-          scaleY: 1,
+          scaleX: scale,
+          scaleY: scale,
         });
       };
       img.src = src;

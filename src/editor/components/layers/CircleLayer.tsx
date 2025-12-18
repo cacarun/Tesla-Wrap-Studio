@@ -7,6 +7,7 @@ interface CircleLayerProps {
   onClick?: (e: any) => void;
   onTap?: (e: any) => void;
   onDragStart?: (e: any) => void;
+  onDragMove?: (e: any) => void;
   onDragEnd?: (e: any) => void;
   onTransformStart?: (e: any) => void;
   onTransformEnd?: (e: any) => void;
@@ -19,6 +20,7 @@ export const CircleLayer = ({
   onClick,
   onTap,
   onDragStart,
+  onDragMove,
   onDragEnd,
   onTransformStart,
   onTransformEnd,
@@ -42,6 +44,7 @@ export const CircleLayer = ({
       onClick={onClick}
       onTap={onTap}
       onDragStart={onDragStart}
+      onDragMove={onDragMove}
       onDragEnd={onDragEnd}
       onTransformStart={onTransformStart}
       onTransformEnd={onTransformEnd}

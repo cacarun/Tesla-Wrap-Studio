@@ -15,7 +15,6 @@ const factoryColors = [
   { name: 'Midnight Silver', color: '#4A4B4D' },
   { name: 'Deep Blue', color: '#1E3A5F' },
   { name: 'Red Multi-Coat', color: '#A12830' },
-  { name: 'Ultra White', color: '#FFFFFF' },
   { name: 'Quicksilver', color: '#8C8C8C' },
   { name: 'Midnight Cherry', color: '#4A1C2B' },
 ];

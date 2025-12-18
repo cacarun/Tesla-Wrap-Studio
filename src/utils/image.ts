@@ -37,3 +37,17 @@ export const downscaleImage = (
   return downscaled;
 };
 
+/**
+ * Calculate scale factor to resize image so the long side is approximately targetSize
+ * @param image - The image element
+ * @param targetSize - Target size for the long side (default: 300px)
+ * @returns Scale factor (scaleX and scaleY will be the same to maintain aspect ratio)
+ */
+export const calculateImageScale = (image: HTMLImageElement, targetSize: number = 300): number => {
+  const longSide = Math.max(image.width, image.height);
+  if (longSide <= targetSize) {
+    return 1; // Image is already small enough
+  }
+  return targetSize / longSide;
+};
+
