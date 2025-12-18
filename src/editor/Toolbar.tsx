@@ -16,9 +16,12 @@ interface ToolbarProps {
 export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectFileInputRef = useRef<HTMLInputElement>(null);
+  const projectNameInputRef = useRef<HTMLInputElement>(null);
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'new' | 'open' | null>(null);
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
+  const [editingName, setEditingName] = useState('');
   
   const {
     undo,
@@ -29,6 +32,7 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
     addLayer,
     isDirty,
     projectName,
+    setProjectName,
     getSerializedState,
     loadProject,
     markAsSaved,
@@ -38,9 +42,49 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
+  // Generate export filename from project name
+  const getExportFilename = () => {
+    const sanitizedName = projectName
+      .replace(/[^a-zA-Z0-9\s-_]/g, '')
+      .replace(/\s+/g, '_')
+      .toLowerCase();
+    return `${sanitizedName}_${currentModel.folderName}.png`;
+  };
+
   const handleExport = () => {
     if (stageRef.current) {
-      exportPng(stageRef.current, currentModel.exportFileName);
+      exportPng(stageRef.current, getExportFilename());
+    }
+  };
+
+  // Project name editing handlers
+  const handleProjectNameDoubleClick = () => {
+    setEditingName(projectName);
+    setIsEditingProjectName(true);
+    // Focus the input after state update
+    setTimeout(() => {
+      projectNameInputRef.current?.focus();
+      projectNameInputRef.current?.select();
+    }, 0);
+  };
+
+  const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingName(e.target.value);
+  };
+
+  const handleProjectNameBlur = () => {
+    const trimmedName = editingName.trim();
+    if (trimmedName) {
+      setProjectName(trimmedName);
+    }
+    setIsEditingProjectName(false);
+  };
+
+  const handleProjectNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleProjectNameBlur();
+    } else if (e.key === 'Escape') {
+      setIsEditingProjectName(false);
     }
   };
 
@@ -187,7 +231,7 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
             }`}
             title="Save Project"
           >
-            Save{isDirty ? '*' : ''}
+            Save
           </button>
           {/* Hidden file inputs */}
           <input
@@ -232,9 +276,26 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
 
         {/* Project Info */}
         <div className="flex items-center gap-2 text-sm text-tesla-gray">
-          <span className="text-tesla-light font-medium truncate max-w-[150px]" title={projectName}>
-            {projectName}
-          </span>
+          {isEditingProjectName ? (
+            <input
+              ref={projectNameInputRef}
+              type="text"
+              value={editingName}
+              onChange={handleProjectNameChange}
+              onBlur={handleProjectNameBlur}
+              onKeyDown={handleProjectNameKeyDown}
+              className="px-2 py-0.5 text-sm font-medium text-tesla-light bg-tesla-black/80 border border-tesla-red/50 rounded outline-none focus:ring-1 focus:ring-tesla-red/50 max-w-[200px]"
+              autoFocus
+            />
+          ) : (
+            <span 
+              className="text-tesla-light font-medium truncate max-w-[150px] cursor-pointer hover:text-white transition-colors"
+              title={`${projectName} (double-click to edit)`}
+              onDoubleClick={handleProjectNameDoubleClick}
+            >
+              {projectName}
+            </span>
+          )}
           <span className="text-tesla-dark">•</span>
           <span className="text-tesla-gray">{currentModel.name}</span>
         </div>
