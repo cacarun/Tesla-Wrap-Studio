@@ -1,5 +1,6 @@
 import { useEditorStore } from '../state/useEditorStore';
 import type { ToolType } from '../state/editorTypes';
+import { loadImage } from '../../utils/image';
 
 export const ToolsPanel = () => {
   const { activeTool, setActiveTool, addLayer, setSelection } = useEditorStore();
@@ -91,6 +92,26 @@ export const ToolsPanel = () => {
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l2.09 6.26L20 9l-5 3.64L16.18 19 12 15.97 7.82 19 9 12.64 4 9l5.91.26L12 3z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'image',
+      label: 'Image Tool',
+      shortcut: 'I',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'texture',
+      label: 'Texture Tool',
+      shortcut: 'X',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
         </svg>
       ),
     },
@@ -227,6 +248,88 @@ export const ToolsPanel = () => {
         scaleY: 1,
       });
       setActiveTool('select');
+    }
+    
+    if (tool === 'image') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          setActiveTool('select');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const src = event.target?.result as string;
+          try {
+            const img = await loadImage(src);
+            addLayer({
+              type: 'image',
+              name: file.name || nextLayerName(),
+              src,
+              image: img,
+              visible: true,
+              locked: false,
+              opacity: 1,
+              x: 100,
+              y: 100,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            });
+            setActiveTool('select');
+          } catch (error) {
+            console.error('Failed to load image:', error);
+            setActiveTool('select');
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+    
+    if (tool === 'texture') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          setActiveTool('select');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const src = event.target?.result as string;
+          try {
+            const img = await loadImage(src);
+            addLayer({
+              type: 'texture',
+              name: file.name || nextLayerName(),
+              src,
+              image: img,
+              visible: true,
+              locked: false,
+              opacity: 1,
+              x: 0,
+              y: 0,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            });
+            setActiveTool('select');
+          } catch (error) {
+            console.error('Failed to load texture:', error);
+            setActiveTool('select');
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
     }
   };
 

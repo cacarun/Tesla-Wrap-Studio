@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { useEditorStore } from '../state/useEditorStore';
 import type { BrushStroke, BrushLayer } from '../state/editorTypes';
+import { loadImage } from '../../utils/image';
 
 interface BrushToolProps {
   stageRef: React.RefObject<StageType | null>;
@@ -324,6 +325,105 @@ export const BrushTool = ({ stageRef }: BrushToolProps) => {
             scaleY: 1,
           });
           setActiveTool('select');
+          break;
+        case 's':
+          addLayer({
+            type: 'star',
+            name: nextLayerName(),
+            numPoints: 5,
+            innerRadius: 30,
+            outerRadius: 60,
+            fill: '#ffffff',
+            stroke: '#ffffff',
+            strokeWidth: 1,
+            visible: true,
+            locked: false,
+            opacity: 1,
+            x: 200,
+            y: 200,
+            rotation: 0,
+            scaleX: 1,
+            scaleY: 1,
+          });
+          setActiveTool('select');
+          break;
+        case 'i':
+          // Image tool - trigger file input
+          {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (!file) return;
+
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                const src = event.target?.result as string;
+                try {
+                  const img = await loadImage(src);
+                  addLayer({
+                    type: 'image',
+                    name: file.name || nextLayerName(),
+                    src,
+                    image: img,
+                    visible: true,
+                    locked: false,
+                    opacity: 1,
+                    x: 100,
+                    y: 100,
+                    rotation: 0,
+                    scaleX: 1,
+                    scaleY: 1,
+                  });
+                  setActiveTool('select');
+                } catch (error) {
+                  console.error('Failed to load image:', error);
+                }
+              };
+              reader.readAsDataURL(file);
+            };
+            input.click();
+          }
+          break;
+        case 'x':
+          // Texture tool - trigger file input
+          {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (!file) return;
+
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                const src = event.target?.result as string;
+                try {
+                  const img = await loadImage(src);
+                  addLayer({
+                    type: 'texture',
+                    name: file.name || nextLayerName(),
+                    src,
+                    image: img,
+                    visible: true,
+                    locked: false,
+                    opacity: 1,
+                    x: 0,
+                    y: 0,
+                    rotation: 0,
+                    scaleX: 1,
+                    scaleY: 1,
+                  });
+                  setActiveTool('select');
+                } catch (error) {
+                  console.error('Failed to load texture:', error);
+                }
+              };
+              reader.readAsDataURL(file);
+            };
+            input.click();
+          }
           break;
         case '[':
           setBrushSettings({ size: Math.max(1, brushSettings.size - 5) });

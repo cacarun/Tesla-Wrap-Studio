@@ -1,7 +1,7 @@
 export type LayerType = 'background' | 'text' | 'image' | 'rect' | 'circle' | 'texture' | 'brush' | 'line' | 'star';
 
 // Tool types for Photoshop-like instrument system
-export type ToolType = 'select' | 'brush' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'line' | 'star';
+export type ToolType = 'select' | 'brush' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'line' | 'star' | 'image' | 'texture';
 
 // Individual brush stroke with its own settings (captured at time of drawing)
 export interface BrushStroke {
