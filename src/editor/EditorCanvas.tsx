@@ -312,7 +312,7 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       className="relative w-full h-full flex flex-col bg-gradient-to-br from-tesla-black via-[#3a3b3c] to-tesla-black overflow-hidden"
     >
       {/* Canvas Area */}
-      <div ref={canvasAreaRef} className="flex-1 flex items-center justify-center overflow-auto" style={{ minHeight: 0 }}>
+      <div ref={canvasAreaRef} className="flex-1 flex items-center justify-center overflow-auto canvas-scrollbar" style={{ minHeight: 0 }}>
         <div
           style={{
             transform: `scale(${scale})`,
