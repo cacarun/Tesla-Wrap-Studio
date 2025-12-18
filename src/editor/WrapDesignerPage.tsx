@@ -115,10 +115,12 @@ export const WrapDesignerPage = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-tesla-black via-[#3a3b3c] to-tesla-black overflow-hidden">
-      <Toolbar
-        stageRef={stageRef}
-        onOpen3DPreview={() => setShow3DPreview(true)}
-      />
+      <div className="p-1">
+        <Toolbar
+          stageRef={stageRef}
+          onOpen3DPreview={() => setShow3DPreview(true)}
+        />
+      </div>
       <div className="flex-1 flex overflow-hidden gap-1 p-1">
         <ToolsPanel />
         <LayersPanel />

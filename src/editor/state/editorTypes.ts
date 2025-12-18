@@ -1,7 +1,7 @@
-export type LayerType = 'background' | 'text' | 'image' | 'rect' | 'circle' | 'texture' | 'brush' | 'line' | 'star';
+export type LayerType = 'background' | 'text' | 'image' | 'rect' | 'circle' | 'texture' | 'brush' | 'line' | 'star' | 'fill';
 
 // Tool types for Photoshop-like instrument system
-export type ToolType = 'select' | 'brush' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'line' | 'star';
+export type ToolType = 'select' | 'brush' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'line' | 'star' | 'image' | 'texture' | 'fill';
 
 // Individual brush stroke with its own settings (captured at time of drawing)
 export interface BrushStroke {
@@ -21,6 +21,8 @@ export interface BrushSettings {
   hardness: number;      // 0-100%
   opacity: number;       // 0-100%
   flow: number;          // 0-100%
+  spacing: number;       // 1-200% (brush spacing)
+  smoothing: number;    // 0-100% (stroke smoothing)
   blendMode: 'normal' | 'multiply' | 'screen' | 'overlay';
 }
 
@@ -116,7 +118,18 @@ export interface StarLayer extends BaseLayer {
   strokeWidth?: number;
 }
 
-export type Layer = BackgroundLayer | TextLayer | ImageLayer | RectLayer | CircleLayer | TextureLayer | BrushLayer | LineLayer | StarLayer;
+export interface FillLayer extends BaseLayer {
+  type: 'fill';
+  fill: string;
+  path: number[]; // Bounding box: [x, y, width, height]
+  fillImageDataUrl?: string; // Pre-rendered fill image as data URL
+  fillImage?: HTMLImageElement; // Loaded image for rendering
+  pixelMask?: number[]; // Pixel indices for color regeneration
+  maskWidth?: number; // Width of the mask
+  maskHeight?: number; // Height of the mask
+}
+
+export type Layer = BackgroundLayer | TextLayer | ImageLayer | RectLayer | CircleLayer | TextureLayer | BrushLayer | LineLayer | StarLayer | FillLayer;
 
 export interface EditorState {
   layers: Layer[];

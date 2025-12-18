@@ -1,4 +1,4 @@
-import { useEffect, useRef, forwardRef } from 'react';
+import { useEffect, useRef, forwardRef, useState } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect, Group } from 'react-konva';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { useEditorStore } from './state/useEditorStore';
@@ -10,8 +10,11 @@ import { TextureLayer } from './components/layers/TextureLayer';
 import { BrushLayer } from './components/layers/BrushLayer';
 import { LineLayer } from './components/layers/LineLayer';
 import { StarLayer } from './components/layers/StarLayer';
+import { FillLayer } from './components/layers/FillLayer';
 import { TransformerWrapper } from './components/TransformerWrapper';
 import { BrushTool } from './components/BrushTool';
+import { FillTool } from './components/FillTool';
+import { BrushCursor } from './components/BrushCursor';
 import { loadImage } from '../utils/image';
 import { carModels } from '../data/carModels';
 import { getTemplateUrl } from '../utils/assets';
@@ -24,10 +27,32 @@ interface EditorCanvasProps {
   onAutoFitChange?: (autoFit: boolean) => void;
 }
 
+type CanvasBackground = 'gray' | 'black' | 'white' | 'transparent';
+
 export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ onStageReady, zoom = 1, onZoomChange, autoFit = true, onAutoFitChange }, ref) => {
   const stageRef = useRef<StageType | null>(null);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const transformStartDataRef = useRef<{ layerId: string; width?: number; height?: number; scaleX: number; scaleY: number } | null>(null);
+  const [canvasBackground, setCanvasBackground] = useState<CanvasBackground>('gray');
+  const [showBackgroundDropdown, setShowBackgroundDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowBackgroundDropdown(false);
+      }
+    };
+
+    if (showBackgroundDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBackgroundDropdown]);
   
   // Use zoom prop, default to 1
   const scale = zoom;
@@ -309,10 +334,53 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
   return (
     <div
       id="canvas-container"
-      className="w-full h-full flex flex-col bg-gradient-to-br from-tesla-black via-[#3a3b3c] to-tesla-black overflow-hidden"
+      className="relative w-full h-full flex flex-col overflow-hidden"
+      style={{
+        background: canvasBackground === 'gray' 
+          ? 'transparent'
+          : canvasBackground === 'black'
+          ? '#000000'
+          : canvasBackground === 'white'
+          ? '#ffffff'
+          : canvasBackground === 'transparent'
+          ? `
+            linear-gradient(45deg, #D7DCDD 25%, transparent 25%),
+            linear-gradient(-45deg, #D7DCDD 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #D7DCDD 75%),
+            linear-gradient(-45deg, transparent 75%, #D7DCDD 75%)
+          `
+          : 'linear-gradient(to bottom right, #4A4B4C, #3a3b3c, #4A4B4C)',
+        backgroundSize: canvasBackground === 'transparent' ? '20px 20px' : 'auto',
+        backgroundPosition: canvasBackground === 'transparent' ? '0 0, 0 10px, 10px -10px, -10px 0px' : '0 0',
+      }}
     >
       {/* Canvas Area */}
-      <div ref={canvasAreaRef} className="flex-1 flex items-center justify-center overflow-auto" style={{ minHeight: 0 }}>
+      <div 
+        ref={canvasAreaRef} 
+        className="relative flex-1 flex items-center justify-center overflow-auto canvas-scrollbar" 
+        style={{ 
+          minHeight: 0,
+          ...(canvasBackground === 'gray' 
+            ? { backgroundColor: 'transparent', background: 'none' }
+            : canvasBackground === 'black'
+            ? { backgroundColor: '#000000' }
+            : canvasBackground === 'white'
+            ? { backgroundColor: '#ffffff' }
+            : canvasBackground === 'transparent'
+            ? {
+                background: `
+                  linear-gradient(45deg, #D7DCDD 25%, transparent 25%),
+                  linear-gradient(-45deg, #D7DCDD 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, #D7DCDD 75%),
+                  linear-gradient(-45deg, transparent 75%, #D7DCDD 75%)
+                `,
+                backgroundSize: '20px 20px',
+                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+              }
+            : { backgroundColor: 'transparent', background: 'none' }
+          ),
+        }}
+      >
         <div
           style={{
             transform: `scale(${scale})`,
@@ -350,6 +418,16 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
             <Group>
               {[...layers].reverse().map((layer) => {
                 const isBrushLayer = layer.type === 'brush';
+                const isFillLayer = layer.type === 'fill';
+                const isFillToolActive = activeTool === 'fill';
+                
+                // When fill tool is active, make fill layers non-interactive so clicks pass through
+                const fillLayerProps = isFillToolActive && isFillLayer ? {
+                  onClick: undefined,
+                  onTap: undefined,
+                  listening: false,
+                } : {};
+                
                 const commonProps = {
                   id: layer.id,
                   onClick: (e: any) => handleLayerClick(e, layer.id),
@@ -358,7 +436,8 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
                   onDragEnd: isBrushLayer ? undefined : (e: any) => handleDragEnd(e, layer.id),
                   onTransformStart: isBrushLayer ? undefined : (e: any) => handleTransformStart(e, layer.id),
                   onTransformEnd: isBrushLayer ? undefined : (e: any) => handleTransformEnd(e, layer.id),
-                  draggable: !layer.locked && !isBrushLayer,
+                  draggable: !layer.locked && !isBrushLayer && !isFillToolActive,
+                  ...fillLayerProps,
                 };
 
                 switch (layer.type) {
@@ -378,6 +457,8 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
                     return <RectLayer key={layer.id} layer={layer} {...commonProps} />;
                   case 'circle':
                     return <CircleLayer key={layer.id} layer={layer} {...commonProps} />;
+                  case 'fill':
+                    return <FillLayer key={layer.id} layer={layer} {...commonProps} />;
                   default:
                     return null;
                 }
@@ -389,81 +470,181 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
 
             {/* Transformer on top (not masked) */}
             <TransformerWrapper selectedLayerId={selectedLayerId} layers={layers} />
+            
+            {/* Brush Cursor (on top of everything, not masked) */}
+            <BrushCursor stageRef={stageRef} />
           </Layer>
           </Stage>
           <BrushTool stageRef={stageRef} />
+          <FillTool stageRef={stageRef} />
         </div>
       </div>
 
-      {/* Fixed Bottom Banner */}
-      <div className="panel border-t border-tesla-dark/50 px-3 py-1.5 flex items-center justify-end">
-        {/* Zoom Controls - Integrated (No additional border/background) */}
-        <div className="flex items-center gap-2">
-          {/* Fit to Screen Button (icon) */}
+      {/* Floating Zoom Controls */}
+      <div className="absolute bottom-3 right-3 bg-tesla-black/80 backdrop-blur-xl border border-tesla-dark/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xl">
+        <button
+          onClick={calculateMaxFitZoom}
+          className="p-1 rounded-lg text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30 transition-colors"
+          title="Fit to Screen"
+          aria-label="Fit to Screen"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4h4m-4 0l5 5M20 8V4h-4m4 0l-5 5M4 16v4h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
+        <div className="w-px h-3 bg-tesla-dark/40"></div>
+        <div className="relative flex items-center" style={{ width: '80px' }}>
+          <div className="absolute w-full h-0.5 bg-tesla-dark/50 rounded-full"></div>
+          <div
+            className="absolute h-0.5 bg-tesla-gray/70 rounded-full transition-all"
+            style={{
+              width: `${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%`,
+            }}
+          ></div>
+          <input
+            type="range"
+            min={minZoom * 100}
+            max={maxZoom * 100}
+            value={zoomPercentage}
+            onChange={handleSliderChange}
+            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer slider-thumb-integrated"
+            style={{ background: 'transparent' }}
+            title="Zoom slider"
+            aria-label="Canvas zoom level"
+          />
+          <style>{`
+            .slider-thumb-integrated::-webkit-slider-thumb {
+              appearance: none;
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: #ffffff;
+              border: 1px solid rgba(156, 163, 175, 0.6);
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+              cursor: pointer;
+            }
+            .slider-thumb-integrated::-moz-range-thumb {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: #ffffff;
+              border: 1px solid rgba(156, 163, 175, 0.6);
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+              cursor: pointer;
+            }
+          `}</style>
+        </div>
+        <span className="text-xs font-medium text-tesla-gray min-w-[2rem] text-right">
+          {zoomPercentage}%
+        </span>
+        <div className="w-px h-3 bg-tesla-dark/40"></div>
+        <div className="relative" ref={dropdownRef}>
           <button
-            onClick={calculateMaxFitZoom}
-            className="p-2 rounded-lg text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30 transition-colors"
-            title="Fit to Screen (100%)"
-            aria-label="Fit to Screen"
+            onClick={() => setShowBackgroundDropdown(!showBackgroundDropdown)}
+            className="p-1 rounded-lg text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30 transition-colors flex items-center gap-1.5"
+            title="Canvas Background"
+            aria-label="Canvas Background"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4h4m-4 0l5 5M20 8V4h-4m4 0l-5 5M4 16v4h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            {canvasBackground === 'gray' && (
+              <div className="w-3 h-3 rounded-sm bg-tesla-black border border-tesla-dark"></div>
+            )}
+            {canvasBackground === 'black' && (
+              <div className="w-3 h-3 rounded-sm bg-black border border-gray-600"></div>
+            )}
+            {canvasBackground === 'white' && (
+              <div className="w-3 h-3 rounded-sm bg-white border border-gray-400"></div>
+            )}
+            {canvasBackground === 'transparent' && (
+              <div 
+                className="w-3 h-3 rounded-sm border border-gray-500"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(45deg, #D7DCDD 25%, transparent 25%),
+                    linear-gradient(-45deg, #D7DCDD 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #D7DCDD 75%),
+                    linear-gradient(-45deg, transparent 75%, #D7DCDD 75%)
+                  `,
+                  backgroundSize: '4px 4px',
+                  backgroundPosition: '0 0, 0 2px, 2px -2px, -2px 0px',
+                }}
+              ></div>
+            )}
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          <div className="w-px h-4 bg-tesla-dark/50"></div>
-          <div className="relative flex items-center" style={{ width: '120px' }}>
-            {/* Min/Max Markers */}
-            <div className="absolute left-0 w-1 h-1 bg-tesla-gray/60 rounded-full -ml-0.5"></div>
-            <div className="absolute right-0 w-1 h-1 bg-tesla-gray/60 rounded-full -mr-0.5"></div>
-            {/* Slider Track Background */}
-            <div className="absolute w-full h-0.5 bg-tesla-dark/50 rounded-full"></div>
-            {/* Filled Track */}
-            <div
-              className="absolute h-0.5 bg-tesla-gray/70 rounded-full transition-all"
-              style={{
-                width: `${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%`,
-              }}
-            ></div>
-            {/* Slider Input */}
-            <input
-              type="range"
-              min={minZoom * 100}
-              max={maxZoom * 100}
-              value={zoomPercentage}
-              onChange={handleSliderChange}
-              className="relative w-full h-1 bg-transparent appearance-none cursor-pointer slider-thumb-integrated"
-              style={{
-                background: 'transparent',
-              }}
-              title="Zoom slider"
-              aria-label="Canvas zoom level"
-            />
-            <style>{`
-              .slider-thumb-integrated::-webkit-slider-thumb {
-                appearance: none;
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background: #ffffff;
-                border: 1px solid rgba(156, 163, 175, 0.6);
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                cursor: pointer;
-              }
-              .slider-thumb-integrated::-moz-range-thumb {
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background: #ffffff;
-                border: 1px solid rgba(156, 163, 175, 0.6);
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                cursor: pointer;
-              }
-            `}</style>
-          </div>
-          {/* Zoom Percentage Display */}
-          <span className="text-xs font-medium text-tesla-gray min-w-[2.5rem] text-right">
-            {zoomPercentage}%
-          </span>
+          {showBackgroundDropdown && (
+            <div className="absolute bottom-full right-0 mb-2 bg-tesla-black/95 backdrop-blur-xl border border-tesla-dark/50 rounded-xl shadow-xl overflow-hidden z-50">
+              <button
+                onClick={() => {
+                  setCanvasBackground('gray');
+                  setShowBackgroundDropdown(false);
+                }}
+                className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs transition-colors ${
+                  canvasBackground === 'gray'
+                    ? 'bg-tesla-dark/30 text-tesla-light'
+                    : 'text-tesla-light hover:bg-tesla-dark/50'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-sm bg-tesla-black border border-tesla-dark"></div>
+                <span>Gray</span>
+              </button>
+              <button
+                onClick={() => {
+                  setCanvasBackground('black');
+                  setShowBackgroundDropdown(false);
+                }}
+                className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs transition-colors ${
+                  canvasBackground === 'black'
+                    ? 'bg-tesla-red/20 text-tesla-red'
+                    : 'text-tesla-light hover:bg-tesla-dark/50'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-sm bg-black border border-gray-600"></div>
+                <span>Black</span>
+              </button>
+              <button
+                onClick={() => {
+                  setCanvasBackground('white');
+                  setShowBackgroundDropdown(false);
+                }}
+                className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs transition-colors ${
+                  canvasBackground === 'white'
+                    ? 'bg-tesla-red/20 text-tesla-red'
+                    : 'text-tesla-light hover:bg-tesla-dark/50'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-sm bg-white border border-gray-400"></div>
+                <span>White</span>
+              </button>
+              <button
+                onClick={() => {
+                  setCanvasBackground('transparent');
+                  setShowBackgroundDropdown(false);
+                }}
+                className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs transition-colors ${
+                  canvasBackground === 'transparent'
+                    ? 'bg-tesla-red/20 text-tesla-red'
+                    : 'text-tesla-light hover:bg-tesla-dark/50'
+                }`}
+              >
+                <div 
+                  className="w-4 h-4 rounded-sm border border-gray-500"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(45deg, #D7DCDD 25%, transparent 25%),
+                      linear-gradient(-45deg, #D7DCDD 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #D7DCDD 75%),
+                      linear-gradient(-45deg, transparent 75%, #D7DCDD 75%)
+                    `,
+                    backgroundSize: '4px 4px',
+                    backgroundPosition: '0 0, 0 2px, 2px -2px, -2px 0px',
+                  }}
+                ></div>
+                <span>Transparent</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -35,18 +35,55 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - elegant thin design */
 ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 140, 140, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Canvas area scrollbar - beautiful floating style */
+.canvas-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-tesla-black/50;
+.canvas-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-tesla-dark rounded-full hover:bg-tesla-gray;
+.canvas-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(180, 180, 180, 0.4) 0%, rgba(120, 120, 120, 0.4) 100%);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.canvas-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(200, 200, 200, 0.6) 0%, rgba(150, 150, 150, 0.6) 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.canvas-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Smooth transitions */
@@ -91,8 +128,7 @@ canvas {
 }
 
 /* Ensure canvas container has no rounded edges and maintains square aspect ratio */
-#canvas-container canvas,
-#canvas-container > div {
+#canvas-container canvas {
   border-radius: 0 !important;
 }
 

@@ -15,13 +15,45 @@ const defaultBrushSettings: BrushSettings = {
   hardness: 100,
   opacity: 100,
   flow: 100,
+  spacing: 25,      // 25% spacing (Photoshop default)
+  smoothing: 0,     // No smoothing by default
   blendMode: 'normal',
 };
+
+// Project file format
+export interface ProjectFile {
+  version: string;
+  name: string;
+  createdAt: string;
+  modifiedAt: string;
+  modelId: string;
+  baseColor: string;
+  layers: SerializedLayer[];
+}
+
+// Serialized layer (without HTMLImageElement references)
+export interface SerializedLayer {
+  id: string;
+  type: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  // Type-specific properties
+  [key: string]: any;
+}
 
 interface EditorStore extends EditorState {
   history: HistorySnapshot[];
   historyIndex: number;
   maxHistorySize: number;
+  isDirty: boolean;  // Track unsaved changes
+  projectName: string;
   
   // Actions
   addLayer: (layer: Omit<Layer, 'id'> | Record<string, any>) => void;
@@ -42,12 +74,28 @@ interface EditorStore extends EditorState {
   undo: () => void;
   redo: () => void;
   pushHistory: () => void;
+  // Project management
+  resetProject: () => void;
+  markAsSaved: () => void;
+  setProjectName: (name: string) => void;
+  getSerializedState: () => ProjectFile;
+  loadProject: (project: ProjectFile) => Promise<void>;
 }
 
 const createHistorySnapshot = (layers: Layer[], baseColor: string): HistorySnapshot => ({
   layers: layers.map(layer => ({ ...layer })),
   baseColor,
 });
+
+// Helper to load an image from a data URL
+const loadImageFromSrc = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+};
 
 export const useEditorStore = create<EditorStore>((set, get) => {
   const pushHistory = () => {
@@ -68,6 +116,7 @@ export const useEditorStore = create<EditorStore>((set, get) => {
       return {
         history: newHistory,
         historyIndex: newHistory.length - 1,
+        isDirty: true,  // Mark as dirty when changes are made
       };
     });
   };
@@ -84,6 +133,8 @@ export const useEditorStore = create<EditorStore>((set, get) => {
     history: [createHistorySnapshot([], '#ffffff')],
     historyIndex: 0,
     maxHistorySize: 50,
+    isDirty: false,
+    projectName: 'Untitled Project',
 
     addLayer: (layerData) => {
       const newLayer: Layer = {
@@ -92,7 +143,7 @@ export const useEditorStore = create<EditorStore>((set, get) => {
       } as Layer;
       
       set((state) => ({
-        layers: [...state.layers, newLayer],
+        layers: [newLayer, ...state.layers],
         selectedLayerId: newLayer.id,
       }));
       
@@ -212,11 +263,98 @@ export const useEditorStore = create<EditorStore>((set, get) => {
           historyIndex: state.historyIndex + 1,
           layers: snapshot.layers.map((l) => ({ ...l })),
           baseColor: snapshot.baseColor,
+          isDirty: true,
         });
       }
     },
 
     pushHistory,
+    
+    // Project management
+    resetProject: () => {
+      set({
+        layers: [],
+        selectedLayerId: null,
+        baseColor: '#ffffff',
+        history: [createHistorySnapshot([], '#ffffff')],
+        historyIndex: 0,
+        isDirty: false,
+        projectName: 'Untitled Project',
+        activeTool: 'select',
+      });
+    },
+    
+    markAsSaved: () => {
+      set({ isDirty: false });
+    },
+    
+    setProjectName: (name: string) => {
+      set({ projectName: name });
+    },
+    
+    getSerializedState: (): ProjectFile => {
+      const state = get();
+      
+      // Serialize layers, removing HTMLImageElement references
+      const serializedLayers: SerializedLayer[] = state.layers.map(layer => {
+        const { ...rest } = layer as any;
+        // Remove non-serializable properties
+        delete rest.image;
+        delete rest.fillImage;
+        return rest as SerializedLayer;
+      });
+      
+      return {
+        version: '1.0',
+        name: state.projectName,
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+        modelId: state.currentModelId,
+        baseColor: state.baseColor,
+        layers: serializedLayers,
+      };
+    },
+    
+    loadProject: async (project: ProjectFile) => {
+      // Restore layers with image loading
+      const restoredLayers: Layer[] = await Promise.all(
+        project.layers.map(async (serializedLayer) => {
+          const layer = { ...serializedLayer } as any;
+          
+          // Load images for image/texture layers
+          if ((layer.type === 'image' || layer.type === 'texture') && layer.src) {
+            try {
+              layer.image = await loadImageFromSrc(layer.src);
+            } catch (e) {
+              console.warn('Failed to load image for layer:', layer.name);
+            }
+          }
+          
+          // Load fill images for fill layers
+          if (layer.type === 'fill' && layer.fillImageDataUrl) {
+            try {
+              layer.fillImage = await loadImageFromSrc(layer.fillImageDataUrl);
+            } catch (e) {
+              console.warn('Failed to load fill image for layer:', layer.name);
+            }
+          }
+          
+          return layer as Layer;
+        })
+      );
+      
+      set({
+        layers: restoredLayers,
+        selectedLayerId: null,
+        baseColor: project.baseColor,
+        currentModelId: project.modelId,
+        history: [createHistorySnapshot(restoredLayers, project.baseColor)],
+        historyIndex: 0,
+        isDirty: false,
+        projectName: project.name,
+        activeTool: 'select',
+      });
+    },
   };
 });
 

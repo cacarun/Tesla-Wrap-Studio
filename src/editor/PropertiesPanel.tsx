@@ -1,22 +1,180 @@
 import { useEditorStore } from './state/useEditorStore';
+import { useEffect } from 'react';
 
-const webSafeFonts = [
-  'Arial',
-  'Georgia',
-  'Times New Roman',
-  'Courier New',
-  'Verdana',
-  'Impact',
+// Comprehensive font list organized by category
+const fontCategories = {
+  'Sans Serif': [
+    'Arial',
+    'Helvetica',
+    'Verdana',
+    'Tahoma',
+    'Trebuchet MS',
+    'Segoe UI',
+    'Open Sans',
+    'Roboto',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Nunito',
+    'Raleway',
+    'Inter',
+    'Source Sans Pro',
+    'Ubuntu',
+    'Oswald',
+    'Quicksand',
+    'Rubik',
+    'Work Sans',
+    'Fira Sans',
+    'Barlow',
+    'DM Sans',
+    'Manrope',
+    'Outfit',
+  ],
+  'Serif': [
+    'Times New Roman',
+    'Georgia',
+    'Palatino Linotype',
+    'Book Antiqua',
+    'Garamond',
+    'Playfair Display',
+    'Merriweather',
+    'Lora',
+    'PT Serif',
+    'Noto Serif',
+    'Libre Baskerville',
+    'Crimson Text',
+    'Bitter',
+    'Cormorant Garamond',
+    'EB Garamond',
+    'Spectral',
+    'Source Serif Pro',
+  ],
+  'Display': [
+    'Impact',
+    'Anton',
+    'Bebas Neue',
+    'Righteous',
+    'Alfa Slab One',
+    'Russo One',
+    'Black Ops One',
+    'Bangers',
+    'Bungee',
+    'Permanent Marker',
+    'Orbitron',
+    'Press Start 2P',
+    'Audiowide',
+    'Racing Sans One',
+    'Teko',
+    'Kanit',
+    'Staatliches',
+    'Bowlby One SC',
+  ],
+  'Handwriting': [
+    'Comic Sans MS',
+    'Brush Script MT',
+    'Pacifico',
+    'Dancing Script',
+    'Satisfy',
+    'Caveat',
+    'Indie Flower',
+    'Sacramento',
+    'Great Vibes',
+    'Kaushan Script',
+    'Lobster',
+    'Lobster Two',
+    'Courgette',
+    'Cookie',
+    'Allura',
+    'Alex Brush',
+  ],
+  'Monospace': [
+    'Courier New',
+    'Consolas',
+    'Monaco',
+    'Lucida Console',
+    'Roboto Mono',
+    'Source Code Pro',
+    'Fira Code',
+    'JetBrains Mono',
+    'IBM Plex Mono',
+    'Space Mono',
+    'Inconsolata',
+  ],
+};
+
+// Google Fonts that need to be loaded
+const googleFonts = [
+  'Open Sans', 'Roboto', 'Lato', 'Montserrat', 'Poppins', 'Nunito', 'Raleway', 'Inter',
+  'Source Sans Pro', 'Ubuntu', 'Oswald', 'Quicksand', 'Rubik', 'Work Sans', 'Fira Sans',
+  'Barlow', 'DM Sans', 'Manrope', 'Outfit', 'Playfair Display', 'Merriweather', 'Lora',
+  'PT Serif', 'Noto Serif', 'Libre Baskerville', 'Crimson Text', 'Bitter', 'Cormorant Garamond',
+  'EB Garamond', 'Spectral', 'Source Serif Pro', 'Anton', 'Bebas Neue', 'Righteous',
+  'Alfa Slab One', 'Russo One', 'Black Ops One', 'Bangers', 'Bungee', 'Permanent Marker',
+  'Orbitron', 'Press Start 2P', 'Audiowide', 'Racing Sans One', 'Teko', 'Kanit', 'Staatliches',
+  'Bowlby One SC', 'Pacifico', 'Dancing Script', 'Satisfy', 'Caveat', 'Indie Flower',
+  'Sacramento', 'Great Vibes', 'Kaushan Script', 'Lobster', 'Lobster Two', 'Courgette',
+  'Cookie', 'Allura', 'Alex Brush', 'Roboto Mono', 'Source Code Pro', 'Fira Code',
+  'JetBrains Mono', 'IBM Plex Mono', 'Space Mono', 'Inconsolata',
 ];
+
+// Function to load Google Fonts
+const loadGoogleFonts = () => {
+  const link = document.getElementById('google-fonts-link');
+  if (!link) {
+    const fontFamilies = googleFonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    const linkElement = document.createElement('link');
+    linkElement.id = 'google-fonts-link';
+    linkElement.rel = 'stylesheet';
+    linkElement.href = `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
+    document.head.appendChild(linkElement);
+  }
+};
+
+// Fill settings component (only shows Fill Color)
+const FillSettingsPanel = () => {
+  const { brushSettings, setBrushSettings } = useEditorStore();
+  
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xs font-semibold text-tesla-gray uppercase tracking-wider">
+        Fill Settings
+      </h3>
+      
+      {/* Fill Color */}
+      <div>
+        <label className="block text-xs font-medium text-tesla-gray mb-1.5">Fill Color</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={brushSettings.color}
+            onChange={(e) => setBrushSettings({ color: e.target.value })}
+            className="h-10 w-16 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg cursor-pointer"
+          />
+          <input
+            type="text"
+            value={brushSettings.color}
+            onChange={(e) => setBrushSettings({ color: e.target.value })}
+            className="flex-1 px-3 py-2 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg text-sm text-tesla-light"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Brush settings component
 const BrushSettingsPanel = () => {
   const { activeTool, brushSettings, setBrushSettings } = useEditorStore();
   
+  const getToolTitle = () => {
+    if (activeTool === 'eraser') return 'Eraser';
+    return 'Brush';
+  };
+  
   return (
     <div className="space-y-4">
       <h3 className="text-xs font-semibold text-tesla-gray uppercase tracking-wider">
-        {activeTool === 'eraser' ? 'Eraser' : 'Brush'} Settings
+        {getToolTitle()} Settings
       </h3>
       
       {/* Size */}
@@ -26,7 +184,7 @@ const BrushSettingsPanel = () => {
           <input
             type="range"
             min="1"
-            max="200"
+            max="500"
             value={brushSettings.size}
             onChange={(e) => setBrushSettings({ size: parseInt(e.target.value) })}
             className="flex-1 h-2 bg-tesla-black rounded-lg appearance-none cursor-pointer accent-tesla-red"
@@ -34,7 +192,7 @@ const BrushSettingsPanel = () => {
           <input
             type="number"
             min="1"
-            max="200"
+            max="500"
             value={brushSettings.size}
             onChange={(e) => setBrushSettings({ size: parseInt(e.target.value) || 1 })}
             className="w-16 px-2 py-1 bg-tesla-black/60 border border-tesla-dark/50 rounded text-sm text-tesla-light text-center"
@@ -111,6 +269,44 @@ const BrushSettingsPanel = () => {
         </div>
       </div>
 
+      {/* Spacing */}
+      <div>
+        <label className="block text-xs font-medium text-tesla-gray mb-1.5">Spacing</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min="1"
+            max="200"
+            value={brushSettings.spacing || 25}
+            onChange={(e) => setBrushSettings({ spacing: parseInt(e.target.value) })}
+            className="flex-1 h-2 bg-tesla-black rounded-lg appearance-none cursor-pointer accent-tesla-red"
+          />
+          <span className="text-xs text-tesla-gray w-10 text-right">{brushSettings.spacing || 25}%</span>
+        </div>
+        <div className="text-xs text-tesla-dark mt-1">
+          Controls brush stamp spacing along stroke
+        </div>
+      </div>
+
+      {/* Smoothing */}
+      <div>
+        <label className="block text-xs font-medium text-tesla-gray mb-1.5">Smoothing</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={brushSettings.smoothing || 0}
+            onChange={(e) => setBrushSettings({ smoothing: parseInt(e.target.value) })}
+            className="flex-1 h-2 bg-tesla-black rounded-lg appearance-none cursor-pointer accent-tesla-red"
+          />
+          <span className="text-xs text-tesla-gray w-10 text-right">{brushSettings.smoothing || 0}%</span>
+        </div>
+        <div className="text-xs text-tesla-dark mt-1">
+          Reduces jitter for smoother strokes
+        </div>
+      </div>
+
       {/* Blend Mode (only for brush) */}
       {activeTool === 'brush' && (
         <div>
@@ -131,19 +327,37 @@ const BrushSettingsPanel = () => {
       {/* Brush Preview */}
       <div className="pt-3 border-t border-tesla-dark/30">
         <label className="block text-xs font-medium text-tesla-gray mb-2">Preview</label>
-        <div className="flex items-center justify-center bg-white/10 rounded-lg p-4 h-20">
-          <div
-            className="rounded-full transition-all"
+        <div className="flex items-center justify-center bg-gradient-to-br from-tesla-dark/50 to-tesla-black/50 rounded-lg p-6 h-24 relative overflow-hidden">
+          {/* Checkerboard background for transparency preview */}
+          <div 
+            className="absolute inset-0 opacity-20"
             style={{
-              width: Math.min(brushSettings.size, 60),
-              height: Math.min(brushSettings.size, 60),
+              backgroundImage: `
+                linear-gradient(45deg, #D7DCDD 25%, transparent 25%),
+                linear-gradient(-45deg, #D7DCDD 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #D7DCDD 75%),
+                linear-gradient(-45deg, transparent 75%, #D7DCDD 75%)
+              `,
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+            }}
+          />
+          <div
+            className="rounded-full transition-all relative z-10"
+            style={{
+              width: Math.min(brushSettings.size / 3, 80),
+              height: Math.min(brushSettings.size / 3, 80),
               backgroundColor: activeTool === 'eraser' ? '#ffffff' : brushSettings.color,
               opacity: brushSettings.opacity / 100,
               boxShadow: brushSettings.hardness < 100 
-                ? `0 0 ${(100 - brushSettings.hardness) / 3}px ${activeTool === 'eraser' ? '#ffffff' : brushSettings.color}`
+                ? `0 0 ${(100 - brushSettings.hardness) / 2}px ${activeTool === 'eraser' ? '#ffffff' : brushSettings.color}`
                 : 'none',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           />
+        </div>
+        <div className="text-xs text-tesla-gray text-center mt-2">
+          {brushSettings.size}px • {brushSettings.hardness}% hard • {brushSettings.opacity}% opacity
         </div>
       </div>
     </div>
@@ -151,14 +365,20 @@ const BrushSettingsPanel = () => {
 };
 
 export const PropertiesPanel = () => {
-  const { layers, selectedLayerId, updateLayer, baseColor, setBaseColor, activeTool } = useEditorStore();
+  const { layers, selectedLayerId, updateLayer, activeTool } = useEditorStore();
+  
+  // Load Google Fonts on mount
+  useEffect(() => {
+    loadGoogleFonts();
+  }, []);
 
   const selectedLayer = layers.find((l) => l.id === selectedLayerId);
   const showBrushSettings = activeTool === 'brush' || activeTool === 'eraser';
+  const showFillSettings = activeTool === 'fill';
 
   if (!selectedLayer) {
     return (
-      <div className="h-full panel rounded-r-xl flex flex-col w-80">
+      <div className="h-full panel rounded-xl flex flex-col w-80 overflow-hidden shadow-lg">
         <div className="p-4 border-b border-tesla-dark/30">
           <h2 className="text-lg font-semibold text-tesla-light flex items-center gap-2">
             <svg className="w-5 h-5 text-tesla-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,8 +387,10 @@ export const PropertiesPanel = () => {
             Properties
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          {showBrushSettings ? (
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
+          {showFillSettings ? (
+            <FillSettingsPanel />
+          ) : showBrushSettings ? (
             <BrushSettingsPanel />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -190,7 +412,7 @@ export const PropertiesPanel = () => {
   };
 
   return (
-    <div className="h-full panel rounded-r-xl flex flex-col w-80">
+    <div className="h-full panel rounded-xl flex flex-col w-80 overflow-hidden shadow-lg">
         <div className="p-4 border-b border-tesla-dark/30">
           <h2 className="text-lg font-semibold text-tesla-light flex items-center gap-2">
             <svg className="w-5 h-5 text-tesla-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,24 +422,45 @@ export const PropertiesPanel = () => {
           </h2>
           <div className="text-sm text-tesla-gray mt-1 truncate">{selectedLayer.name}</div>
         </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Brush Settings (shown when brush or eraser tool is active) */}
-        {showBrushSettings && (
-          <BrushSettingsPanel />
-        )}
-        {/* Common Properties */}
-        <div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
+        {/* Fill Layer Properties (only Fill Color when Fill layer is selected) */}
+        {selectedLayer.type === 'fill' ? (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-tesla-gray uppercase tracking-wider">Fill</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-tesla-gray mb-1.5">Fill Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={selectedLayer.fill}
+                    onChange={(e) => updateProperty('fill', e.target.value)}
+                    className="h-10 w-16 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={selectedLayer.fill}
+                    onChange={(e) => updateProperty('fill', e.target.value)}
+                    className="flex-1 px-3 py-2 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg text-sm text-tesla-light"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Fill Settings (shown when fill tool is active, but no layer selected) */}
+            {showFillSettings && (
+              <FillSettingsPanel />
+            )}
+            {/* Brush Settings (shown when brush or eraser tool is active) */}
+            {showBrushSettings && (
+              <BrushSettingsPanel />
+            )}
+            {/* Common Properties */}
+            <div>
           <h3 className="text-xs font-semibold mb-3 text-tesla-gray uppercase tracking-wider">Common</h3>
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-tesla-gray mb-1.5">Name</label>
-              <input
-                type="text"
-                value={selectedLayer.name}
-                onChange={(e) => updateProperty('name', e.target.value)}
-                className="w-full px-3 py-2 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg text-sm text-tesla-light placeholder-tesla-dark focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-tesla-red/50 transition-all"
-              />
-            </div>
             <div>
               <label className="block text-xs font-medium text-tesla-gray mb-1.5">Opacity</label>
               <input
@@ -316,13 +559,25 @@ export const PropertiesPanel = () => {
                   value={selectedLayer.fontFamily}
                   onChange={(e) => updateProperty('fontFamily', e.target.value)}
                   className="w-full px-3 py-2 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg text-sm text-tesla-light focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-tesla-red/50 transition-all"
+                  style={{ fontFamily: selectedLayer.fontFamily }}
                 >
-                  {webSafeFonts.map((font) => (
-                    <option key={font} value={font}>
-                      {font}
-                    </option>
+                  {Object.entries(fontCategories).map(([category, fonts]) => (
+                    <optgroup key={category} label={category}>
+                      {fonts.map((font) => (
+                        <option key={font} value={font} style={{ fontFamily: font }}>
+                          {font}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
+                {/* Font preview */}
+                <div 
+                  className="mt-2 p-3 bg-tesla-black/40 rounded-lg text-center text-tesla-light"
+                  style={{ fontFamily: selectedLayer.fontFamily, fontSize: '18px' }}
+                >
+                  {selectedLayer.fontFamily}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-tesla-gray mb-1.5">Color</label>
@@ -676,27 +931,9 @@ export const PropertiesPanel = () => {
             </div>
           </div>
         )}
+          </>
+        )}
       </div>
-
-      {/* Base Car Color */}
-      <div className="p-4 border-t border-tesla-dark/30">
-        <h3 className="text-xs font-semibold mb-3 text-tesla-gray uppercase tracking-wider">Base Color</h3>
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={baseColor}
-            onChange={(e) => setBaseColor(e.target.value)}
-            className="h-10 w-16 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg cursor-pointer"
-          />
-          <input
-            type="text"
-            value={baseColor}
-            onChange={(e) => setBaseColor(e.target.value)}
-            className="flex-1 px-3 py-2 bg-tesla-black/60 border border-tesla-dark/50 rounded-lg text-sm text-tesla-light focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-tesla-red/50 transition-all"
-          />
-        </div>
-      </div>
-
     </div>
   );
 };

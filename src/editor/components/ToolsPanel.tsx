@@ -1,16 +1,46 @@
 import { useEditorStore } from '../state/useEditorStore';
 import type { ToolType } from '../state/editorTypes';
+import { loadImage } from '../../utils/image';
+import {
+  Move,
+  Brush,
+  Eraser,
+  Type,
+  RectangleHorizontal,
+  Circle,
+  Minus,
+  Star,
+  Image as ImageIcon,
+  Layers,
+  PaintBucket,
+} from 'lucide-react';
 
 export const ToolsPanel = () => {
   const { activeTool, setActiveTool, addLayer, setSelection } = useEditorStore();
 
-  const nextLayerName = () => {
+  const getLayerTypeName = (type: string): string => {
+    const typeMap: Record<string, string> = {
+      'brush': 'Brush',
+      'text': 'Text',
+      'rect': 'Rectangle',
+      'circle': 'Ellipse',
+      'line': 'Line',
+      'star': 'Star',
+      'image': 'Image',
+      'texture': 'Texture',
+      'fill': 'Fill',
+    };
+    return typeMap[type] || 'Layer';
+  };
+
+  const nextLayerName = (layerType: string) => {
     const { layers } = useEditorStore.getState();
+    const baseName = getLayerTypeName(layerType);
     let index = 1;
-    while (layers.some((l) => l.name === `Layer ${index}`)) {
+    while (layers.some((l) => l.name === `${baseName} ${index}`)) {
       index += 1;
     }
-    return `Layer ${index}`;
+    return `${baseName} ${index}`;
   };
 
   const tools: { id: ToolType; label: string; icon: React.ReactNode; shortcut: string }[] = [
@@ -18,81 +48,67 @@ export const ToolsPanel = () => {
       id: 'select',
       label: 'Move Tool',
       shortcut: 'V',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-        </svg>
-      ),
+      icon: <Move className="w-5 h-5" />,
     },
     {
       id: 'brush',
       label: 'Brush Tool',
       shortcut: 'B',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      ),
+      icon: <Brush className="w-5 h-5" />,
     },
     {
       id: 'eraser',
       label: 'Eraser Tool',
       shortcut: 'E',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      ),
+      icon: <Eraser className="w-5 h-5" />,
     },
     {
       id: 'text',
       label: 'Text Tool',
       shortcut: 'T',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-        </svg>
-      ),
+      icon: <Type className="w-5 h-5" />,
+    },
+    {
+      id: 'fill',
+      label: 'Fill Tool',
+      shortcut: 'F',
+      icon: <PaintBucket className="w-5 h-5" />,
     },
     {
       id: 'rectangle',
       label: 'Rectangle Tool',
       shortcut: 'U',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16v12H4V6z" />
-        </svg>
-      ),
+      icon: <RectangleHorizontal className="w-5 h-5" />,
     },
     {
       id: 'circle',
       label: 'Ellipse Tool',
       shortcut: 'O',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <Circle className="w-5 h-5" />,
     },
     {
       id: 'line',
       label: 'Line Tool',
       shortcut: 'L',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 20L20 4" />
-        </svg>
-      ),
+      icon: <Minus className="w-5 h-5" />,
     },
     {
       id: 'star',
       label: 'Star Tool',
       shortcut: 'S',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l2.09 6.26L20 9l-5 3.64L16.18 19 12 15.97 7.82 19 9 12.64 4 9l5.91.26L12 3z" />
-        </svg>
-      ),
+      icon: <Star className="w-5 h-5" />,
+    },
+    {
+      id: 'image',
+      label: 'Image Tool',
+      shortcut: 'I',
+      icon: <ImageIcon className="w-5 h-5" />,
+    },
+    {
+      id: 'texture',
+      label: 'Texture Tool',
+      shortcut: 'X',
+      icon: <Layers className="w-5 h-5" />,
     },
   ];
 
@@ -109,7 +125,7 @@ export const ToolsPanel = () => {
       } else {
         addLayer({
           type: 'brush',
-          name: nextLayerName(),
+          name: nextLayerName('brush'),
           strokes: [],
           visible: true,
           locked: false,
@@ -128,7 +144,7 @@ export const ToolsPanel = () => {
     if (tool === 'text') {
       addLayer({
         type: 'text',
-        name: nextLayerName(),
+        name: nextLayerName('text'),
         text: 'Sample Text',
         fontSize: 48,
         fontFamily: 'Arial',
@@ -152,7 +168,7 @@ export const ToolsPanel = () => {
     if (tool === 'rectangle') {
       addLayer({
         type: 'rect',
-        name: nextLayerName(),
+        name: nextLayerName('rect'),
         width: 200,
         height: 100,
         fill: '#B73038',
@@ -171,7 +187,7 @@ export const ToolsPanel = () => {
     if (tool === 'circle') {
       addLayer({
         type: 'circle',
-        name: nextLayerName(),
+        name: nextLayerName('circle'),
         radius: 50,
         fill: '#D7DCDD',
         visible: true,
@@ -189,7 +205,7 @@ export const ToolsPanel = () => {
     if (tool === 'line') {
       addLayer({
         type: 'line',
-        name: nextLayerName(),
+        name: nextLayerName('line'),
         points: [100, 100, 300, 200],
         stroke: '#ffffff',
         strokeWidth: 4,
@@ -210,7 +226,7 @@ export const ToolsPanel = () => {
     if (tool === 'star') {
       addLayer({
         type: 'star',
-        name: nextLayerName(),
+        name: nextLayerName('star'),
         numPoints: 5,
         innerRadius: 30,
         outerRadius: 60,
@@ -228,26 +244,108 @@ export const ToolsPanel = () => {
       });
       setActiveTool('select');
     }
+    
+    if (tool === 'image') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          setActiveTool('select');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const src = event.target?.result as string;
+          try {
+            const img = await loadImage(src);
+            addLayer({
+              type: 'image',
+              name: nextLayerName('image'),
+              src,
+              image: img,
+              visible: true,
+              locked: false,
+              opacity: 1,
+              x: 100,
+              y: 100,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            });
+            setActiveTool('select');
+          } catch (error) {
+            console.error('Failed to load image:', error);
+            setActiveTool('select');
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+    
+    if (tool === 'texture') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          setActiveTool('select');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const src = event.target?.result as string;
+          try {
+            const img = await loadImage(src);
+            addLayer({
+              type: 'texture',
+              name: nextLayerName('texture'),
+              src,
+              image: img,
+              visible: true,
+              locked: false,
+              opacity: 1,
+              x: 0,
+              y: 0,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            });
+            setActiveTool('select');
+          } catch (error) {
+            console.error('Failed to load texture:', error);
+            setActiveTool('select');
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
   };
 
   return (
-    <div className="h-full panel rounded-l-xl flex flex-col w-16 overflow-x-hidden">
+    <div className="h-full panel rounded-xl flex flex-col w-16 overflow-hidden shadow-lg">
       {/* Tool Buttons */}
-      <div className="flex-1 p-1.5 space-y-1 overflow-y-auto">
+      <div className="flex-1 p-2 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin">
         {tools.map((tool) => (
           <button
             key={tool.id}
             onClick={() => handleToolSelect(tool.id)}
-            className={`w-full p-2 rounded-lg transition-all flex items-center justify-center relative group ${
+            className={`w-full p-2 rounded-lg transition-all duration-200 flex items-center justify-center relative group ${
               activeTool === tool.id
-                ? 'bg-tesla-red text-white'
-                : 'text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30'
+                ? 'bg-tesla-red text-white shadow-md shadow-tesla-red/40'
+                : 'text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/40'
             }`}
             title={`${tool.label} (${tool.shortcut})`}
           >
             {tool.icon}
             {/* Tooltip */}
-            <div className="absolute left-full ml-2 px-2 py-1 bg-tesla-black/95 border border-tesla-dark/50 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
               {tool.label} <span className="text-tesla-gray">({tool.shortcut})</span>
             </div>
           </button>
