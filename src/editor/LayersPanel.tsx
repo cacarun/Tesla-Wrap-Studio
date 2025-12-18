@@ -199,7 +199,7 @@ export const LayersPanel = () => {
   };
 
   return (
-    <div className="h-full panel rounded-l-xl flex flex-col w-64 overflow-x-hidden">
+    <div className="h-full panel rounded-xl flex flex-col w-64 overflow-hidden shadow-lg">
       <div className="p-4 border-b border-tesla-dark/30">
         <h2 className="text-lg font-semibold text-tesla-light flex items-center gap-2">
           <svg className="w-5 h-5 text-tesla-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@ export const LayersPanel = () => {
           Layers
         </h2>
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

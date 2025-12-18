@@ -91,8 +91,7 @@ canvas {
 }
 
 /* Ensure canvas container has no rounded edges and maintains square aspect ratio */
-#canvas-container canvas,
-#canvas-container > div {
+#canvas-container canvas {
   border-radius: 0 !important;
 }
 

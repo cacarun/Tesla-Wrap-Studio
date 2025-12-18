@@ -309,7 +309,7 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
   return (
     <div
       id="canvas-container"
-      className="w-full h-full flex flex-col bg-gradient-to-br from-tesla-black via-[#3a3b3c] to-tesla-black overflow-hidden"
+      className="relative w-full h-full flex flex-col bg-gradient-to-br from-tesla-black via-[#3a3b3c] to-tesla-black overflow-hidden"
     >
       {/* Canvas Area */}
       <div ref={canvasAreaRef} className="flex-1 flex items-center justify-center overflow-auto" style={{ minHeight: 0 }}>
@@ -395,76 +395,63 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
         </div>
       </div>
 
-      {/* Fixed Bottom Banner */}
-      <div className="panel border-t border-tesla-dark/50 px-3 py-1.5 flex items-center justify-end">
-        {/* Zoom Controls - Integrated (No additional border/background) */}
-        <div className="flex items-center gap-2">
-          {/* Fit to Screen Button (icon) */}
-          <button
-            onClick={calculateMaxFitZoom}
-            className="p-2 rounded-lg text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30 transition-colors"
-            title="Fit to Screen (100%)"
-            aria-label="Fit to Screen"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4h4m-4 0l5 5M20 8V4h-4m4 0l-5 5M4 16v4h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
-          <div className="w-px h-4 bg-tesla-dark/50"></div>
-          <div className="relative flex items-center" style={{ width: '120px' }}>
-            {/* Min/Max Markers */}
-            <div className="absolute left-0 w-1 h-1 bg-tesla-gray/60 rounded-full -ml-0.5"></div>
-            <div className="absolute right-0 w-1 h-1 bg-tesla-gray/60 rounded-full -mr-0.5"></div>
-            {/* Slider Track Background */}
-            <div className="absolute w-full h-0.5 bg-tesla-dark/50 rounded-full"></div>
-            {/* Filled Track */}
-            <div
-              className="absolute h-0.5 bg-tesla-gray/70 rounded-full transition-all"
-              style={{
-                width: `${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%`,
-              }}
-            ></div>
-            {/* Slider Input */}
-            <input
-              type="range"
-              min={minZoom * 100}
-              max={maxZoom * 100}
-              value={zoomPercentage}
-              onChange={handleSliderChange}
-              className="relative w-full h-1 bg-transparent appearance-none cursor-pointer slider-thumb-integrated"
-              style={{
-                background: 'transparent',
-              }}
-              title="Zoom slider"
-              aria-label="Canvas zoom level"
-            />
-            <style>{`
-              .slider-thumb-integrated::-webkit-slider-thumb {
-                appearance: none;
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background: #ffffff;
-                border: 1px solid rgba(156, 163, 175, 0.6);
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                cursor: pointer;
-              }
-              .slider-thumb-integrated::-moz-range-thumb {
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background: #ffffff;
-                border: 1px solid rgba(156, 163, 175, 0.6);
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-                cursor: pointer;
-              }
-            `}</style>
-          </div>
-          {/* Zoom Percentage Display */}
-          <span className="text-xs font-medium text-tesla-gray min-w-[2.5rem] text-right">
-            {zoomPercentage}%
-          </span>
+      {/* Floating Zoom Controls */}
+      <div className="absolute bottom-3 right-3 bg-tesla-black/80 backdrop-blur-xl border border-tesla-dark/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xl">
+        <button
+          onClick={calculateMaxFitZoom}
+          className="p-1 rounded-lg text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/30 transition-colors"
+          title="Fit to Screen"
+          aria-label="Fit to Screen"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4h4m-4 0l5 5M20 8V4h-4m4 0l-5 5M4 16v4h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
+        <div className="w-px h-3 bg-tesla-dark/40"></div>
+        <div className="relative flex items-center" style={{ width: '80px' }}>
+          <div className="absolute w-full h-0.5 bg-tesla-dark/50 rounded-full"></div>
+          <div
+            className="absolute h-0.5 bg-tesla-gray/70 rounded-full transition-all"
+            style={{
+              width: `${((zoom - minZoom) / (maxZoom - minZoom)) * 100}%`,
+            }}
+          ></div>
+          <input
+            type="range"
+            min={minZoom * 100}
+            max={maxZoom * 100}
+            value={zoomPercentage}
+            onChange={handleSliderChange}
+            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer slider-thumb-integrated"
+            style={{ background: 'transparent' }}
+            title="Zoom slider"
+            aria-label="Canvas zoom level"
+          />
+          <style>{`
+            .slider-thumb-integrated::-webkit-slider-thumb {
+              appearance: none;
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: #ffffff;
+              border: 1px solid rgba(156, 163, 175, 0.6);
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+              cursor: pointer;
+            }
+            .slider-thumb-integrated::-moz-range-thumb {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: #ffffff;
+              border: 1px solid rgba(156, 163, 175, 0.6);
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+              cursor: pointer;
+            }
+          `}</style>
         </div>
+        <span className="text-xs font-medium text-tesla-gray min-w-[2rem] text-right">
+          {zoomPercentage}%
+        </span>
       </div>
     </div>
   );

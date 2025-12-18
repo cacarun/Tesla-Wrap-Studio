@@ -82,7 +82,7 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
   };
 
   return (
-    <div className="panel border-b-0 rounded-none p-3 flex items-center gap-3 flex-wrap">
+    <div className="panel border-b-0 rounded-xl p-3 flex items-center gap-3 flex-wrap shadow-lg">
       {/* Logo */}
       <div className="flex items-center gap-3 border-r border-tesla-dark/50 pr-3">
         <img
@@ -156,16 +156,6 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
       {/* Actions */}
       <div className="flex items-center gap-2 ml-auto">
         <button
-          onClick={handleExport}
-          className="btn-primary flex items-center gap-2"
-          title="Export PNG"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>Export PNG</span>
-        </button>
-        <button
           onClick={onOpen3DPreview}
           disabled
           className="btn-secondary flex items-center gap-2 opacity-50 cursor-not-allowed"
@@ -174,6 +164,16 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
           <span>3D Preview – Coming Soon</span>
+        </button>
+        <button
+          onClick={handleExport}
+          className="btn-primary flex items-center gap-2"
+          title="Export PNG"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Export PNG</span>
         </button>
       </div>
     </div>

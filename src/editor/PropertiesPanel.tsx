@@ -158,7 +158,7 @@ export const PropertiesPanel = () => {
 
   if (!selectedLayer) {
     return (
-      <div className="h-full panel rounded-r-xl flex flex-col w-80">
+      <div className="h-full panel rounded-xl flex flex-col w-80 overflow-hidden shadow-lg">
         <div className="p-4 border-b border-tesla-dark/30">
           <h2 className="text-lg font-semibold text-tesla-light flex items-center gap-2">
             <svg className="w-5 h-5 text-tesla-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ export const PropertiesPanel = () => {
             Properties
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
           {showBrushSettings ? (
             <BrushSettingsPanel />
           ) : (
@@ -190,7 +190,7 @@ export const PropertiesPanel = () => {
   };
 
   return (
-    <div className="h-full panel rounded-r-xl flex flex-col w-80">
+    <div className="h-full panel rounded-xl flex flex-col w-80 overflow-hidden shadow-lg">
         <div className="p-4 border-b border-tesla-dark/30">
           <h2 className="text-lg font-semibold text-tesla-light flex items-center gap-2">
             <svg className="w-5 h-5 text-tesla-gray" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,7 +200,7 @@ export const PropertiesPanel = () => {
           </h2>
           <div className="text-sm text-tesla-gray mt-1 truncate">{selectedLayer.name}</div>
         </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
         {/* Brush Settings (shown when brush or eraser tool is active) */}
         {showBrushSettings && (
           <BrushSettingsPanel />
