@@ -297,3 +297,5 @@ const extractImages = (layers: SerializedLayer[]): { cleanedLayers: SerializedLa
   return { cleanedLayers, images };
 };
 
+
+
