@@ -4,6 +4,7 @@ import { getUserDesigns, loadProjectFromSupabase } from '../../utils/supabasePro
 import type { SavedDesign } from '../../utils/supabaseProjects';
 import { useEditorStore } from '../state/useEditorStore';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { LoginDialog } from '../../components/LoginDialog';
 import { X, Loader2, AlertCircle, FolderOpen } from 'lucide-react';
 
 interface OpenProjectDialogProps {
@@ -21,6 +22,7 @@ export function OpenProjectDialog({ isOpen, onClose, onProjectLoaded }: OpenProj
   const [openingDesignId, setOpeningDesignId] = useState<string | null>(null);
   const [pendingDesignId, setPendingDesignId] = useState<string | null>(null);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -35,7 +37,12 @@ export function OpenProjectDialog({ isOpen, onClose, onProjectLoaded }: OpenProj
       const userDesigns = await getUserDesigns();
       setDesigns(userDesigns);
     } catch (err: any) {
-      setError(err.message || 'Failed to load designs');
+      const message = err?.message || 'Failed to load designs';
+      setError(message);
+      // If session is missing/expired, prompt sign-in
+      if (message.toLowerCase().includes('must be logged in')) {
+        setIsLoginDialogOpen(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -99,13 +106,28 @@ export function OpenProjectDialog({ isOpen, onClose, onProjectLoaded }: OpenProj
         <div className="bg-gradient-to-br from-tesla-black via-[#2a2b2c] to-tesla-black border border-tesla-dark rounded-xl p-6 max-w-md w-full shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-4">Login Required</h2>
           <p className="text-tesla-light mb-4">Please log in to open projects from your account.</p>
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-tesla-red hover:bg-tesla-red/80 text-white rounded transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsLoginDialogOpen(true)}
+              className="flex-1 px-4 py-2 bg-tesla-red hover:bg-tesla-red/80 text-white rounded transition-colors"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
+        <LoginDialog
+          isOpen={isLoginDialogOpen}
+          onClose={() => setIsLoginDialogOpen(false)}
+          onSuccess={() => {
+            setIsLoginDialogOpen(false);
+          }}
+        />
       </div>
     );
   }
@@ -129,26 +151,6 @@ export function OpenProjectDialog({ isOpen, onClose, onProjectLoaded }: OpenProj
             <span>{error}</span>
           </div>
         )}
-
-        {/* Open Local File Option */}
-        <button
-          type="button"
-          className="mb-4 w-full p-4 border border-tesla-dark rounded-lg hover:border-tesla-red/50 transition-colors cursor-pointer text-left"
-          onClick={() => {
-            onClose();
-            onProjectLoaded();
-          }}
-          title="Open local file"
-          aria-label="Open local file"
-        >
-          <div className="flex items-center gap-3">
-            <FolderOpen className="w-5 h-5 text-tesla-light" />
-            <div>
-              <div className="text-white font-medium">Open Local File</div>
-              <div className="text-tesla-light text-sm">Open a .twrap file from your computer</div>
-            </div>
-          </div>
-        </button>
 
         {/* User's Designs */}
         <div className="flex-1 overflow-y-auto">
@@ -219,6 +221,13 @@ export function OpenProjectDialog({ isOpen, onClose, onProjectLoaded }: OpenProj
         onSave={handleUnsavedSave}
         onDiscard={handleUnsavedDiscard}
         onCancel={handleUnsavedCancel}
+      />
+      <LoginDialog
+        isOpen={isLoginDialogOpen}
+        onClose={() => setIsLoginDialogOpen(false)}
+        onSuccess={() => {
+          setIsLoginDialogOpen(false);
+        }}
       />
     </div>
   );

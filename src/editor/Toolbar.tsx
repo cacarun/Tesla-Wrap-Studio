@@ -392,9 +392,6 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
 
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2 ml-auto flex-shrink-0">
-          {/* Profile Menu */}
-          <ProfileMenu />
-          
           <div className="relative z-[100]" ref={infoDropdownRef}>
             <button
               onClick={() => setIsInfoDropdownOpen(!isInfoDropdownOpen)}
@@ -449,12 +446,12 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
             onClick={onOpen3DPreview}
             disabled
             className="btn-secondary flex items-center gap-1 sm:gap-2 opacity-50 cursor-not-allowed px-2 sm:px-4"
-            title="3D Preview – Coming Soon"
+            title="Coming Soon"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
-            <span className="hidden sm:inline">3D Preview – Coming Soon</span>
+            <span className="hidden sm:inline">3D Preview</span>
           </button>
           <button
             onClick={handleExport}
@@ -466,6 +463,8 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
             </svg>
             <span className="hidden sm:inline">Export PNG</span>
           </button>
+            {/* Profile Menu (far right) */}
+            <ProfileMenu />
         </div>
       </div>
 

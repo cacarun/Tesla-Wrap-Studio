@@ -79,9 +79,11 @@ export function ProfileMenu() {
       <>
         <button
           onClick={() => setIsLoginDialogOpen(true)}
-          className="px-3 py-1.5 text-xs font-medium text-tesla-light bg-tesla-black/70 rounded hover:bg-tesla-black transition-colors"
+          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-colors"
+          title="Sign in"
+          aria-label="Sign in"
         >
-          Sign In
+          <User className="w-4 h-4 text-white/80" />
         </button>
         <LoginDialog
           isOpen={isLoginDialogOpen}
