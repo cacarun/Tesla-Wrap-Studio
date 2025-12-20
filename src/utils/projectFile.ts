@@ -193,10 +193,12 @@ export const saveProjectToFile = async (project: ProjectFile): Promise<void> => 
 
 /**
  * Load a project from a .twrap file (supports both ZIP and legacy JSON formats)
+ * Accepts both File and Blob objects for flexibility
  */
-export const loadProjectFromFile = async (file: File): Promise<ProjectFile> => {
-  // Validate file extension
-  if (!file.name.endsWith(PROJECT_FILE_EXTENSION) && !file.name.endsWith('.json')) {
+export const loadProjectFromFile = async (file: File | Blob): Promise<ProjectFile> => {
+  // Only validate filename if it's a File with a name property
+  const fileName = file instanceof File ? file.name : '';
+  if (fileName && !fileName.endsWith(PROJECT_FILE_EXTENSION) && !fileName.endsWith('.json')) {
     throw new Error(`Invalid file type. Expected ${PROJECT_FILE_EXTENSION} or .json file.`);
   }
   
@@ -214,8 +216,15 @@ export const loadProjectFromFile = async (file: File): Promise<ProjectFile> => {
       
       // Validate manifest
       if (!manifest.version || !manifest.layers || !manifest.modelId) {
-        throw new Error('Invalid project manifest.');
+        console.error('Invalid project manifest:', manifest);
+        throw new Error('Invalid project manifest: missing required fields (version, layers, or modelId).');
       }
+      
+      console.log('Loading project from ZIP:', { 
+        name: manifest.name, 
+        version: manifest.version, 
+        layerCount: manifest.layers.length 
+      });
       
       // Restore images from ZIP
       const restoredLayers = await restoreImages(manifest.layers, zip);
@@ -229,9 +238,12 @@ export const loadProjectFromFile = async (file: File): Promise<ProjectFile> => {
         baseColor: manifest.baseColor,
         layers: restoredLayers,
       };
+    } else {
+      console.warn('ZIP file does not contain manifest.json, trying legacy JSON format');
     }
-  } catch (zipError) {
+  } catch (zipError: any) {
     // Not a valid ZIP, try legacy JSON format
+    console.log('Not a valid ZIP file, trying legacy JSON format:', zipError.message);
   }
   
   // Fall back to legacy JSON format (v1.0)
@@ -241,12 +253,20 @@ export const loadProjectFromFile = async (file: File): Promise<ProjectFile> => {
     
     // Validate legacy project structure
     if (!project.version || !project.layers || !project.modelId) {
-      throw new Error('Invalid project file format.');
+      console.error('Invalid legacy project structure:', project);
+      throw new Error('Invalid project file format: missing required fields (version, layers, or modelId).');
     }
     
+    console.log('Loading project from legacy JSON format:', { 
+      name: project.name, 
+      version: project.version, 
+      layerCount: project.layers.length 
+    });
+    
     return project;
-  } catch (jsonError) {
-    throw new Error('Failed to parse project file. The file may be corrupted.');
+  } catch (jsonError: any) {
+    console.error('Failed to parse project file:', jsonError);
+    throw new Error(`Failed to parse project file. The file may be corrupted or in an unsupported format. Error: ${jsonError.message}`);
   }
 };
 

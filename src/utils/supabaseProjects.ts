@@ -22,7 +22,11 @@ export interface SavedDesign {
 export const saveProjectToSupabase = async (
   project: ProjectFile,
   previewImageDataUrl: string,
-  designId?: string // If provided, update existing design
+  designId?: string, // If provided, update existing design
+  options?: {
+    description?: string | null;
+    visibility?: 'public' | 'private';
+  }
 ): Promise<SavedDesign> => {
   if (!supabase) {
     throw new Error('Supabase is not configured');
@@ -107,11 +111,11 @@ export const saveProjectToSupabase = async (
   // Save or update design in database
   const designData = {
     title: project.name,
-    description: null,
+    description: options?.description ?? null,
     model_id: project.modelId,
     preview_image_url: previewUrlData.publicUrl,
     project_file_url: projectFileName, // Store path, not full URL
-    visibility: 'private' as const, // Default to private
+    visibility: options?.visibility ?? 'private',
     published: true,
   };
 
@@ -169,24 +173,41 @@ export const loadProjectFromSupabase = async (designId: string): Promise<Project
     .eq('id', designId)
     .single();
 
-  if (designError) throw designError;
-  if (!design) throw new Error('Design not found');
+  if (designError) {
+    console.error('Error fetching design from database:', designError);
+    throw new Error(`Failed to load design: ${designError.message}`);
+  }
+  if (!design) {
+    throw new Error(`Design not found with ID: ${designId}`);
+  }
 
   // Verify user owns the design
   if (design.user_id !== session.user.id) {
     throw new Error('You do not have permission to load this design');
   }
 
+  // Log for debugging
+  console.log('Loading design:', { designId, projectFileUrl: design.project_file_url });
+
   // Download project file from storage
   const { data: fileData, error: fileError } = await supabase.storage
     .from('designs')
     .download(design.project_file_url);
 
-  if (fileError) throw fileError;
-  if (!fileData) throw new Error('Project file not found');
+  if (fileError) {
+    console.error('Error downloading project file:', fileError);
+    throw new Error(`Failed to download project file: ${fileError.message}`);
+  }
+  if (!fileData) {
+    throw new Error(`Project file not found at path: ${design.project_file_url}`);
+  }
+
+  // Convert Blob to File (Supabase Storage returns Blob, but loadProjectFromFile expects File)
+  const fileName = design.project_file_url.split('/').pop() || `${designId}.twrap`;
+  const file = new File([fileData], fileName, { type: 'application/zip' });
 
   // Load project from file
-  const project = await loadProjectFromFile(fileData as File);
+  const project = await loadProjectFromFile(file);
   return project;
 };
 

@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { useEditorStore } from '../state/useEditorStore'
 import { exportPngAsDataUrl } from '../../utils/publish'
 import { saveProjectToSupabase } from '../../utils/supabaseProjects'
-import { X, Loader2, Check } from 'lucide-react'
+import { X, Loader2, Check, Globe, Lock } from 'lucide-react'
 import type { Stage } from 'konva/lib/Stage'
+import { supabase } from '../../lib/supabase'
 
 interface SaveDialogProps {
   isOpen: boolean
@@ -20,6 +21,9 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [description, setDescription] = useState('')
+  const [visibility, setVisibility] = useState<'public' | 'private'>('private')
+  const [loadingMeta, setLoadingMeta] = useState(false)
 
   // Generate preview when dialog opens
   useEffect(() => {
@@ -30,8 +34,29 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
       setEditingName(projectName)
       setError(null)
       setSuccess(false)
+
+      // Load existing metadata for editing
+      if (designId && supabase) {
+        setLoadingMeta(true)
+        supabase
+          .from('designs')
+          .select('description, visibility')
+          .eq('id', designId)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setDescription(data.description || '')
+              setVisibility((data.visibility as 'public' | 'private') || 'private')
+            }
+          })
+          .finally(() => setLoadingMeta(false))
+      } else {
+        setDescription('')
+        setVisibility('private')
+        setLoadingMeta(false)
+      }
     }
-  }, [isOpen, projectName, stageRef])
+  }, [isOpen, projectName, stageRef, designId])
 
   const handleSave = async () => {
     if (!stageRef.current) {
@@ -66,7 +91,11 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
       const savedDesign = await saveProjectToSupabase(
         project,
         preview,
-        designId || undefined
+        designId || undefined,
+        {
+          description: description.trim() || null,
+          visibility,
+        }
       )
 
       // Update store
@@ -90,7 +119,7 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">Save Design</h2>
@@ -106,7 +135,7 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto">
           {/* Preview Image */}
           {previewDataUrl && (
             <div className="relative aspect-square bg-white/5 rounded-xl overflow-hidden border border-white/10">
@@ -132,6 +161,55 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-transparent disabled:opacity-50"
               placeholder="Enter design name"
             />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label htmlFor="project-description" className="block text-sm font-medium text-white/70 mb-2">
+              Description (optional)
+            </label>
+            <textarea
+              id="project-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={saving || success || loadingMeta}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-tesla-red/50 focus:border-transparent disabled:opacity-50"
+              placeholder="Add a short description"
+              rows={3}
+            />
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2">Visibility</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setVisibility('public')}
+                disabled={saving || success || loadingMeta}
+                className={`w-full px-4 py-3 rounded-xl border text-sm font-medium transition-colors flex items-center gap-2 justify-center ${
+                  visibility === 'public'
+                    ? 'border-tesla-red bg-tesla-red/10 text-white'
+                    : 'border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibility('private')}
+                disabled={saving || success || loadingMeta}
+                className={`w-full px-4 py-3 rounded-xl border text-sm font-medium transition-colors flex items-center gap-2 justify-center ${
+                  visibility === 'private'
+                    ? 'border-tesla-red bg-tesla-red/10 text-white'
+                    : 'border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                Private
+              </button>
+            </div>
           </div>
 
           {/* Status Messages */}
