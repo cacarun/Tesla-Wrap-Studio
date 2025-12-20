@@ -37,19 +37,28 @@ export function SaveDialog({ isOpen, onClose, onSuccess, stageRef }: SaveDialogP
 
       // Load existing metadata for editing
       if (designId && supabase) {
-        setLoadingMeta(true)
-        supabase
-          .from('designs')
-          .select('description, visibility')
-          .eq('id', designId)
-          .single()
-          .then(({ data }) => {
+        const loadMeta = async () => {
+          setLoadingMeta(true)
+          try {
+            if (!supabase) {
+              setLoadingMeta(false)
+              return
+            }
+            const { data } = await supabase
+              .from('designs')
+              .select('description, visibility')
+              .eq('id', designId)
+              .single()
+
             if (data) {
               setDescription(data.description || '')
               setVisibility((data.visibility as 'public' | 'private') || 'private')
             }
-          })
-          .finally(() => setLoadingMeta(false))
+          } finally {
+            setLoadingMeta(false)
+          }
+        }
+        loadMeta()
       } else {
         setDescription('')
         setVisibility('private')

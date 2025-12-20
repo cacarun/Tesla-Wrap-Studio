@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 import { X, Mail, Lock, AlertCircle, User as UserIcon } from 'lucide-react'
 
 interface LoginDialogProps {
@@ -54,7 +53,7 @@ export function LoginDialog({ isOpen, onClose, onSuccess }: LoginDialogProps) {
     try {
       const result = mode === 'login' 
         ? await signIn(email, password)
-        : await signUp(email, password, username.trim())
+        : await signUp(email, password)
 
       if (result.error) {
         setError(result.error.message || 'Authentication failed')
