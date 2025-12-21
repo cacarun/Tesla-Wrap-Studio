@@ -1,9 +1,9 @@
 import { useEditorStore } from './state/useEditorStore';
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { 
   ChevronDown, 
   Move, 
-  Palette, 
   Type, 
   Square, 
   Circle, 
@@ -12,9 +12,6 @@ import {
   Star,
   Paintbrush,
   Droplet,
-  RotateCw,
-  Maximize2,
-  Eye,
   Layers
 } from 'lucide-react';
 
