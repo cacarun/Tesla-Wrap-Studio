@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditorStore } from '../state/useEditorStore';
 import { loadImage } from '../../utils/image';
 import { useAuth } from '../../contexts/AuthContext';
@@ -733,130 +734,139 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop with blur */}
       <div 
-        className="absolute inset-0 bg-black/70"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => !state.loading && onClose()}
       />
       
       {/* Dialog */}
       <div 
         ref={dialogRef}
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-[#1a1a1a] rounded-xl border border-white/[0.08] shadow-2xl"
+        className="relative w-full max-w-md max-h-[85vh] overflow-hidden bg-gradient-to-b from-[#1f1f23] to-[#16161a] rounded-2xl border border-white/10 shadow-2xl shadow-black/50"
       >
+        {/* Decorative gradient accent */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+        
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-[#1a1a1a]">
-          <div className="flex items-center gap-2.5">
-            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-            <h2 className="text-base font-medium text-white">AI Texture Generator</h2>
-            {loadingCredits ? (
-              <span className="text-xs text-white/40">Loading...</span>
-            ) : credits !== null ? (
-              <span className={`text-xs font-medium ${credits.credits > 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                {credits.credits} credit{credits.credits !== 1 ? 's' : ''}
-              </span>
-            ) : null}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-[#1f1f23]/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-white">AI Texture Generator</h2>
+              {loadingCredits ? (
+                <span className="text-xs text-white/40">Loading credits...</span>
+              ) : credits !== null ? (
+                <span className={`text-xs ${credits.credits > 0 ? 'text-purple-400' : 'text-red-400'}`}>
+                  {credits.credits} credit{credits.credits !== 1 ? 's' : ''} remaining
+                </span>
+              ) : null}
+            </div>
           </div>
           <button
             onClick={() => !state.loading && onClose()}
-            className="p-1.5 rounded-md hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-colors disabled:opacity-50"
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/[0.08] text-white/40 hover:text-white transition-all disabled:opacity-50"
             disabled={state.loading}
             title="Close dialog"
             aria-label="Close dialog"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
+        
+        {/* Scrollable content */}
+        <div className="overflow-y-auto max-h-[calc(85vh-80px)]">
 
-        {/* Show purchase UI when no credits (either initially or after trying to generate) */}
-        {!loadingCredits && (showNoCreditsView || (credits !== null && credits.credits === 0 && state.images.length === 0)) ? (
-          <div className="p-5 space-y-5">
-            {/* No Credits Message */}
-            <div className="text-center py-4">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+          {/* Show purchase UI when no credits (either initially or after trying to generate) */}
+          {!loadingCredits && (showNoCreditsView || (credits !== null && credits.credits === 0 && state.images.length === 0)) ? (
+            <div className="p-6 space-y-6">
+              {/* No Credits Message */}
+              <div className="text-center py-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-white text-lg font-semibold mb-2">No Credits Remaining</h3>
+                <p className="text-white/50 text-sm">Purchase credits to generate AI textures</p>
               </div>
-              <h3 className="text-white font-medium mb-1">No Credits Remaining</h3>
-              <p className="text-white/50 text-sm">Purchase credits to generate AI textures</p>
-            </div>
 
-            {/* Purchase Error */}
-            {purchaseError && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-xs text-red-400 flex-1">{purchaseError}</p>
-              </div>
-            )}
+              {/* Purchase Error */}
+              {purchaseError && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-400 flex-1">{purchaseError}</p>
+                </div>
+              )}
 
-            {/* Credit Packages - Direct to Stripe */}
-            <div className="space-y-2" data-purchase-section>
-              {CREDIT_PACKAGES.map((pkg) => (
-                <button
-                  key={pkg.id}
-                  onClick={() => handlePurchase(pkg.id)}
-                  disabled={purchaseLoading}
-                  className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                    pkg.popular
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-white/[0.08] bg-white/[0.02] hover:border-white/20'
-                  } ${purchaseLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.01]'}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-medium">{pkg.credits} credits</span>
-                        {pkg.popular && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded">
-                            BEST
-                          </span>
-                        )}
+              {/* Credit Packages - Direct to Stripe */}
+              <div className="space-y-3" data-purchase-section>
+                {CREDIT_PACKAGES.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    onClick={() => handlePurchase(pkg.id)}
+                    disabled={purchaseLoading}
+                    className={`group w-full p-4 rounded-xl border-2 transition-all text-left ${
+                      pkg.popular
+                        ? 'border-purple-500/60 bg-gradient-to-r from-purple-500/10 to-blue-500/10'
+                        : 'border-white/[0.08] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+                    } ${purchaseLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.99]'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-white font-semibold text-base">{pkg.credits} credits</span>
+                          {pkg.popular && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full uppercase tracking-wide">
+                              Best Value
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-white/40 mt-1">
+                          ${(pkg.price / pkg.credits).toFixed(2)} per credit
+                        </p>
                       </div>
-                      <p className="text-xs text-white/40 mt-0.5">
-                        ${(pkg.price / pkg.credits).toFixed(2)} per credit
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {purchaseLoading && purchasePackageId === pkg.id ? (
-                        <svg className="w-4 h-4 text-white/50 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <div className="flex items-center gap-3">
+                        {purchaseLoading && purchasePackageId === pkg.id ? (
+                          <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                        ) : (
+                          <span className="text-2xl font-bold text-white">${pkg.price}</span>
+                        )}
+                        <svg className={`w-5 h-5 text-white/30 transition-transform ${purchaseLoading ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                      ) : (
-                        <span className="text-lg font-semibold text-white">${pkg.price}</span>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
 
-            {/* Info Note */}
-            <p className="text-center text-xs text-white/40">
-              1 Credit = 1 Texture Generated
-            </p>
-
-            {/* Secure Payment Note */}
-            <div className="flex items-center justify-center gap-2 text-white/30">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span className="text-xs">Secure payment via Stripe</span>
+              {/* Info & Secure Payment */}
+              <div className="flex flex-col items-center gap-2 pt-2">
+                <p className="text-xs text-white/50">1 Credit = 1 Texture Generated</p>
+                <div className="flex items-center gap-2 text-white/30">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-xs">Secure payment via Stripe</span>
+                </div>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="p-5 space-y-4">
+          ) : (
+            <div className="p-6 space-y-5">
             {/* Prompt Input */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">
+              <label className="block text-sm font-medium text-white/80 mb-2">
                 Describe your texture
               </label>
               <div className="relative">
@@ -864,36 +874,39 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g. carbon fiber weave, galaxy nebula, dragon scales..."
-                  rows={2}
-                  className="w-full px-3 py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white placeholder-white/25 focus:outline-none focus:border-white/20 transition-colors resize-none text-sm"
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.07] transition-all resize-none text-sm leading-relaxed"
                   maxLength={500}
                   disabled={state.loading}
                 />
+                <div className="absolute bottom-2.5 right-3 text-[10px] text-white/20">
+                  {prompt.length}/500
+                </div>
               </div>
               
               {/* Suggestions */}
-              <div className="relative mt-2" ref={suggestionsRef}>
+              <div className="relative mt-3" ref={suggestionsRef}>
                 <button
                   type="button"
                   onClick={() => setShowSuggestions(!showSuggestions)}
-                  className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/60 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-white/50 hover:text-white/70 hover:bg-white/[0.05] transition-all"
                 >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
-                  <span>Ideas</span>
-                  <svg className={`w-3 h-3 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span>Need inspiration?</span>
+                  <svg className={`w-3.5 h-3.5 transition-transform ${showSuggestions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 
                 {showSuggestions && (
-                  <div className="absolute top-full left-0 mt-1.5 w-full max-h-40 overflow-y-auto bg-[#222] border border-white/[0.08] rounded-lg shadow-xl z-50">
+                  <div className="absolute top-full left-0 mt-2 w-full max-h-48 overflow-y-auto bg-[#252529] border border-white/[0.1] rounded-xl shadow-xl z-50">
                     {PROMPT_SUGGESTIONS.slice(0, 30).map((suggestion, index) => (
                       <button
                         key={index}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full px-3 py-2 text-left text-xs text-white/60 hover:bg-white/[0.06] hover:text-white transition-colors"
+                        className="w-full px-4 py-2.5 text-left text-sm text-white/60 hover:bg-white/[0.06] hover:text-white transition-colors first:rounded-t-xl last:rounded-b-xl"
                       >
                         {suggestion}
                       </button>
@@ -905,24 +918,27 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
 
             {/* Style Selector */}
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">
+              <label className="block text-sm font-medium text-white/60 mb-2">
                 Style
               </label>
               <div className="relative" ref={styleDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setShowStyleDropdown(!showStyleDropdown)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white text-sm hover:bg-white/[0.06] transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white text-sm hover:bg-white/[0.07] hover:border-white/[0.15] transition-all"
                   disabled={state.loading}
                 >
-                  <span>{AI_STYLE_PRESETS[style].name}</span>
-                  <svg className={`w-3.5 h-3.5 text-white/40 transition-transform ${showStyleDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-purple-400" />
+                    <span>{AI_STYLE_PRESETS[style].name}</span>
+                  </div>
+                  <svg className={`w-4 h-4 text-white/40 transition-transform ${showStyleDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 
                 {showStyleDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-full bg-[#222] border border-white/[0.08] rounded-lg shadow-xl z-50 overflow-hidden max-h-52 overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 w-full bg-[#252529] border border-white/[0.1] rounded-xl shadow-xl z-50 overflow-hidden max-h-56 overflow-y-auto">
                     {(Object.keys(AI_STYLE_PRESETS) as AIStylePreset[]).map((key) => (
                       <button
                         key={key}
@@ -930,13 +946,14 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                           setStyle(key);
                           setShowStyleDropdown(false);
                         }}
-                        className={`w-full px-3 py-2 text-left transition-colors ${
+                        className={`w-full px-4 py-2.5 text-left transition-all flex items-center gap-2.5 ${
                           style === key 
-                            ? 'bg-white/[0.08] text-white' 
-                            : 'text-white/60 hover:bg-white/[0.04] hover:text-white'
+                            ? 'bg-purple-500/20 text-white' 
+                            : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
                         }`}
                       >
-                        <div className="text-sm">{AI_STYLE_PRESETS[key].name}</div>
+                        <div className={`w-2 h-2 rounded-full ${style === key ? 'bg-purple-400' : 'bg-white/20'}`} />
+                        <span className="text-sm">{AI_STYLE_PRESETS[key].name}</span>
                       </button>
                     ))}
                   </div>
@@ -946,18 +963,18 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
 
             {/* Error Message */}
             {state.error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-xs text-red-400 flex-1">{state.error}</p>
+                <p className="text-sm text-red-400 flex-1">{state.error}</p>
                 <button 
                   onClick={() => setState(prev => ({ ...prev, error: null }))} 
-                  className="text-red-400/50 hover:text-red-400"
+                  className="text-red-400/50 hover:text-red-400 transition-colors"
                   title="Dismiss error"
                   aria-label="Dismiss error"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -968,71 +985,75 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
             <button
               onClick={handleGenerate}
               disabled={state.loading || !prompt.trim()}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ${
+              className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-semibold text-sm transition-all ${
                 state.loading || !prompt.trim()
                   ? 'bg-white/[0.06] text-white/25 cursor-not-allowed'
-                  : 'bg-white text-black hover:bg-white/90'
+                  : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-400 hover:to-blue-400 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]'
               }`}
             >
               {state.loading ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
                   <span>Generating...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
-                  <span>Generate {credits && credits.credits > 0 && `(1 credit)`}</span>
+                  <span>Generate Textures</span>
+                  {credits && credits.credits > 0 && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-xs">1 credit</span>
+                  )}
                 </>
               )}
             </button>
 
             {/* Loading State */}
             {state.loading && (
-              <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-white/[0.02] border border-white/[0.06]">
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="relative w-10 h-10">
-                    <div className="absolute inset-0 rounded-full border border-white/10"></div>
-                    <div className="absolute inset-0 rounded-full border border-transparent border-t-white/60 animate-spin"></div>
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-white/[0.08]">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                  <div className="relative w-16 h-16">
+                    <div className="absolute inset-0 rounded-full border-2 border-purple-500/20"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-purple-500 animate-spin"></div>
+                    <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
                   </div>
                   <div className="text-center">
-                    <p className="text-white/50 text-sm">Creating your texture...</p>
-                    <p className="text-white/30 text-xs mt-0.5">~15-30 seconds</p>
+                    <p className="text-white/70 text-sm font-medium">Creating your textures...</p>
+                    <p className="text-white/40 text-xs mt-1">This usually takes 15-30 seconds</p>
                   </div>
                 </div>
+                {/* Animated background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent animate-pulse" />
               </div>
             )}
 
             {/* Generated Images Grid */}
             {state.images.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-white/50">Results</span>
+                  <span className="text-sm font-medium text-white/70">Choose a variation</span>
                   <button
                     onClick={handleGenerate}
-                    disabled={state.loading || !credits || credits.credits <= 0}
-                    className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/60 transition-colors disabled:opacity-50"
+                    disabled={state.loading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white/50 hover:text-white hover:bg-white/[0.06] transition-all disabled:opacity-50"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <span>Regenerate</span>
                   </button>
                 </div>
                 
-                <div className={`grid gap-2 ${state.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                <div className="grid grid-cols-2 gap-3">
                   {state.images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setState(prev => ({ ...prev, selectedIndex: index }))}
-                      className={`relative aspect-square rounded-lg overflow-hidden border transition-all ${
+                      className={`group relative aspect-square rounded-xl overflow-hidden transition-all ${
                         state.selectedIndex === index
-                          ? 'border-white/40 ring-1 ring-white/20'
-                          : 'border-white/[0.08] hover:border-white/20'
+                          ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[#1f1f23]'
+                          : 'ring-1 ring-white/[0.1] hover:ring-white/[0.2]'
                       }`}
                       title={`Select design variation ${index + 1}`}
                       aria-label={`Select design variation ${index + 1}`}
@@ -1040,15 +1061,28 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                       <img
                         src={img.preview}
                         alt={`Generated design ${index + 1}`}
-                        className="w-full h-full object-contain bg-[#111]"
+                        className="w-full h-full object-contain bg-[#0a0a0c]"
                       />
+                      {/* Hover overlay */}
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity ${
+                        state.selectedIndex === index ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`} />
+                      {/* Selection indicator */}
                       {state.selectedIndex === index && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center">
-                          <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center shadow-lg">
+                          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       )}
+                      {/* Variation number */}
+                      <div className={`absolute bottom-2 left-2 px-2 py-0.5 rounded-md text-xs font-medium transition-opacity ${
+                        state.selectedIndex === index 
+                          ? 'bg-purple-500/80 text-white opacity-100' 
+                          : 'bg-black/50 text-white/70 opacity-0 group-hover:opacity-100'
+                      }`}>
+                        #{index + 1}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -1057,13 +1091,13 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                 <button
                   onClick={handleAddToDesign}
                   disabled={state.selectedIndex === null}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                  className={`w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-semibold text-sm transition-all ${
                     state.selectedIndex === null
                       ? 'bg-white/[0.06] text-white/25 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-400'
+                      : 'bg-white text-black hover:bg-white/90 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <span>Add to Canvas</span>
@@ -1072,25 +1106,25 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
             )}
 
             {/* Top Up Credits Section */}
-            <div className="pt-3 border-t border-white/[0.06]" data-purchase-section>
+            <div className="pt-4 mt-4 border-t border-white/[0.06]" data-purchase-section>
               <button
                 onClick={() => setShowTopUp(!showTopUp)}
-                className="w-full flex items-center justify-between text-xs text-white/40 hover:text-white/60 transition-colors"
+                className="w-full flex items-center justify-between py-2 text-sm text-white/50 hover:text-white/70 transition-colors"
               >
                 <span>Need more credits?</span>
-                <svg className={`w-3.5 h-3.5 transition-transform ${showTopUp ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 transition-transform ${showTopUp ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               
               {showTopUp && (
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2.5">
                   {purchaseError && (
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <svg className="w-3.5 h-3.5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                      <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-[10px] text-red-400 flex-1">{purchaseError}</p>
+                      <p className="text-xs text-red-400 flex-1">{purchaseError}</p>
                     </div>
                   )}
                   {CREDIT_PACKAGES.map((pkg) => (
@@ -1098,28 +1132,26 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                       key={pkg.id}
                       onClick={() => handlePurchase(pkg.id)}
                       disabled={purchaseLoading}
-                      className={`w-full p-2.5 rounded-lg border transition-all text-left ${
+                      className={`group w-full p-3 rounded-xl border transition-all text-left ${
                         pkg.popular
-                          ? 'border-blue-500/50 bg-blue-500/5'
-                          : 'border-white/[0.06] bg-white/[0.02] hover:border-white/15'
-                      } ${purchaseLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.01]'}`}
+                          ? 'border-purple-500/40 bg-purple-500/5'
+                          : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.04]'
+                      } ${purchaseLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-[0.99]'}`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm">{pkg.credits} credits</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-white text-sm font-medium">{pkg.credits} credits</span>
                           {pkg.popular && (
-                            <span className="px-1 py-0.5 text-[9px] font-medium bg-blue-500 text-white rounded">
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full">
                               BEST
                             </span>
                           )}
-                          <span className="text-[10px] text-white/30">${(pkg.price / pkg.credits).toFixed(2)}/credit</span>
+                          <span className="text-xs text-white/30">${(pkg.price / pkg.credits).toFixed(2)}/credit</span>
                         </div>
                         {purchaseLoading && purchasePackageId === pkg.id ? (
-                          <svg className="w-3.5 h-3.5 text-white/50 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
+                          <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
                         ) : (
-                          <span className="text-sm font-medium text-white">${pkg.price}</span>
+                          <span className="text-sm font-semibold text-white">${pkg.price}</span>
                         )}
                       </div>
                     </button>
@@ -1128,9 +1160,11 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
               )}
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
