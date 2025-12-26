@@ -47,6 +47,16 @@ export const exportPng = (stage: Stage | null, filename: string): void => {
       lineNode.visible(false);
     }
   });
+
+  // Hide line endpoint handles (Circles with red stroke #B73038)
+  const allCircles = stage.find('Circle');
+  allCircles.forEach(circleNode => {
+    const stroke = (circleNode as any).stroke();
+    if (stroke === '#B73038') {
+      elementsToHide.push({ node: circleNode, wasVisible: circleNode.visible() });
+      circleNode.visible(false);
+    }
+  });
   
   // Force redraw to apply visibility changes
   stage.batchDraw();

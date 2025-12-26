@@ -59,6 +59,7 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
   const currentModel = carModels.find((m) => m.id === currentModelId) || carModels[0];
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+  const isModelYLongRange = currentModelId === 'modely-l';
 
   // Generate export filename from project name
   const getExportFilename = () => {
@@ -449,12 +450,18 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
               </div>
             )}
           </div>
-          <Tooltip title="Coming Soon" placement="bottom" arrow>
+          <Tooltip 
+            title={isModelYLongRange ? "3D Preview not available for Model Y L" : "3D Preview"} 
+            placement="bottom" 
+            arrow
+          >
             <span>
               <button
                 onClick={onOpen3DPreview}
-                disabled
-                className="btn-secondary flex items-center gap-1 sm:gap-2 opacity-50 cursor-not-allowed px-2 sm:px-4"
+                disabled={isModelYLongRange}
+                className={`btn-secondary flex items-center gap-1 sm:gap-2 px-2 sm:px-4 ${
+                  isModelYLongRange ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
