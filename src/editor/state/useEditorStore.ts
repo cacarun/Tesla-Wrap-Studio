@@ -134,13 +134,13 @@ export const useEditorStore = create<EditorStore>((set, get) => {
   return {
     layers: [],
     selectedLayerId: null,
-    baseColor: '#ffffff',
+    baseColor: '#F5F5F0', // Tesla Pearl White Multi-Coat
     currentModelId: defaultModel.id,
     templateDimensions: null,
     templateImage: null,
     activeTool: 'select' as ToolType,
     brushSettings: { ...defaultBrushSettings },
-    history: [createHistorySnapshot([], '#ffffff')],
+    history: [createHistorySnapshot([], '#F5F5F0')], // Tesla Pearl White Multi-Coat
     historyIndex: 0,
     maxHistorySize: 50,
     isDirty: false,
@@ -180,15 +180,11 @@ export const useEditorStore = create<EditorStore>((set, get) => {
     },
 
     duplicateLayer: (id) => {
-      console.log('duplicateLayer called with id:', id);
       const state = get();
       const layer = state.layers.find((l) => l.id === id);
       if (!layer) {
-        console.log('Layer not found!');
         return;
       }
-
-      console.log('Duplicating layer:', layer);
       const duplicated: Layer = {
         ...layer,
         id: uuidv4(),
@@ -202,7 +198,6 @@ export const useEditorStore = create<EditorStore>((set, get) => {
         selectedLayerId: duplicated.id,
       }));
       pushHistory();
-      console.log('Layer duplicated successfully');
     },
 
     copyLayer: (id) => {
@@ -372,8 +367,8 @@ export const useEditorStore = create<EditorStore>((set, get) => {
       set({
         layers: [],
         selectedLayerId: null,
-        baseColor: '#ffffff',
-        history: [createHistorySnapshot([], '#ffffff')],
+        baseColor: '#F5F5F0', // Tesla Pearl White Multi-Coat
+        history: [createHistorySnapshot([], '#F5F5F0')],
         historyIndex: 0,
         isDirty: false,
         projectName: 'Untitled Project',
@@ -427,8 +422,8 @@ export const useEditorStore = create<EditorStore>((set, get) => {
           if ((layer.type === 'image' || layer.type === 'texture') && layer.src) {
             try {
               layer.image = await loadImageFromSrc(layer.src);
-            } catch (e) {
-              console.warn('Failed to load image for layer:', layer.name);
+            } catch {
+              // Failed to load image
             }
           }
           
@@ -436,8 +431,8 @@ export const useEditorStore = create<EditorStore>((set, get) => {
           if (layer.type === 'fill' && layer.fillImageDataUrl) {
             try {
               layer.fillImage = await loadImageFromSrc(layer.fillImageDataUrl);
-            } catch (e) {
-              console.warn('Failed to load fill image for layer:', layer.name);
+            } catch {
+              // Failed to load fill image
             }
           }
           

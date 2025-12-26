@@ -40,6 +40,9 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [showVerticalCenterGuide, setShowVerticalCenterGuide] = useState(false);
   const [showHorizontalCenterGuide, setShowHorizontalCenterGuide] = useState(false);
+  
+  // Right-click hint state
+  const [showRightClickHint, setShowRightClickHint] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -198,13 +201,39 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
   const currentModel = carModels.find((m) => m.id === currentModelId) || carModels[0];
   const contextLayer = contextMenu ? layers.find((l) => l.id === contextMenu.layerId) : null;
 
-  // Debug context menu state
+  // Dismiss hint handler
+  const handleDismissHint = () => {
+    setShowRightClickHint(false);
+    localStorage.setItem('rightClickHintDismissed', 'true');
+  };
+
+  // Show right-click hint after first layer is added
   useEffect(() => {
-    if (contextMenu) {
-      console.log('Context menu state:', contextMenu);
-      console.log('Context layer:', contextLayer);
+    const hintDismissed = localStorage.getItem('rightClickHintDismissed') === 'true';
+    if (!hintDismissed && layers.length === 1) {
+      // Show hint after a short delay to let the layer render
+      const showTimer = setTimeout(() => {
+        setShowRightClickHint(true);
+        // Auto-dismiss after 8 seconds
+        const dismissTimer = setTimeout(() => {
+          setShowRightClickHint(false);
+          localStorage.setItem('rightClickHintDismissed', 'true');
+        }, 8000);
+        // Cleanup dismiss timer if component unmounts or hint is dismissed early
+        return () => clearTimeout(dismissTimer);
+      }, 1000);
+      return () => clearTimeout(showTimer);
+    } else {
+      setShowRightClickHint(false);
     }
-  }, [contextMenu, contextLayer]);
+  }, [layers.length]);
+
+  // Dismiss hint if user right-clicks
+  useEffect(() => {
+    if (contextMenu && showRightClickHint) {
+      handleDismissHint();
+    }
+  }, [contextMenu, showRightClickHint]);
 
   // Close context menu on outside click or ESC
   useEffect(() => {
@@ -214,16 +243,13 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       const target = e.target as HTMLElement;
       // Don't close if clicking inside the context menu
       if (target.closest('.context-menu-portal')) {
-        console.log('Click inside context menu - not closing');
         return;
       }
-      console.log('Click outside context menu - closing');
       closeLayerContextMenu();
     };
     
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        console.log('ESC pressed - closing context menu');
         closeLayerContextMenu();
       }
     };
@@ -255,17 +281,14 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       // Cmd+C / Ctrl+C - Copy
       if (isModKey && e.key === 'c' && selectedLayerId) {
         e.preventDefault();
-        console.log('Copy shortcut triggered for layer:', selectedLayerId);
         copyLayer(selectedLayerId);
       }
       
       // Cmd+V / Ctrl+V - Paste
       if (isModKey && e.key === 'v' && clipboardLayer) {
         e.preventDefault();
-        console.log('Paste shortcut triggered');
         const pasted = pasteLayer();
         if (pasted) {
-          console.log('Pasted layer:', pasted.id);
           setSelection(pasted.id);
         }
       }
@@ -273,7 +296,6 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
       // Cmd+D / Ctrl+D - Duplicate
       if (isModKey && e.key === 'd' && selectedLayerId) {
         e.preventDefault();
-        console.log('Duplicate shortcut triggered for layer:', selectedLayerId);
         duplicateLayer(selectedLayerId);
       }
       
@@ -282,7 +304,6 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
         const layer = layers.find((l) => l.id === selectedLayerId);
         if (layer && !layer.locked) {
           e.preventDefault();
-          console.log('Delete key pressed for layer:', selectedLayerId);
           deleteLayer(selectedLayerId);
         }
       }
@@ -321,7 +342,6 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
 
   const handleStageContextMenu = (e: any) => {
     e.evt.preventDefault();
-    console.log('Stage context menu triggered, selectedLayerId:', selectedLayerId);
     if (selectedLayerId) {
       openLayerContextMenu(selectedLayerId, e.evt.clientX, e.evt.clientY);
     } else {
@@ -336,7 +356,6 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
 
   const handleLayerContextMenu = (e: any, layerId: string) => {
     e.evt.preventDefault();
-    console.log('Layer context menu triggered for:', layerId);
     setSelection(layerId);
     openLayerContextMenu(layerId, e.evt.clientX, e.evt.clientY);
   };
@@ -823,11 +842,43 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
             )}
           </Layer>
           </Stage>
+          
           </div>
         </div>
         <BrushTool stageRef={stageRef} />
         <FillTool stageRef={stageRef} />
       </div>
+
+      {/* Right-Click Hint Tooltip - Bottom Left */}
+      {showRightClickHint && (
+        <div className="absolute bottom-3 left-3 z-50">
+          <div className="relative bg-[#1c1c1e]/95 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl max-w-sm">
+            {/* Close button */}
+            <button
+              onClick={handleDismissHint}
+              className="absolute top-2 right-2 p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+              aria-label="Dismiss hint"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Content */}
+            <div className="pr-6">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+                <h3 className="text-white font-semibold text-sm">Right-Click for Options</h3>
+              </div>
+              <p className="text-white/70 text-xs leading-relaxed">
+                Right-click on any layer to access quick actions like duplicate, copy, paste, and more.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Zoom Controls */}
       <div className="absolute bottom-3 right-3 bg-tesla-black/80 backdrop-blur-xl border border-tesla-dark/40 rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xl">
@@ -1008,7 +1059,6 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
               className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('Duplicate button clicked for layer:', contextLayer.id);
                 duplicateLayer(contextLayer.id);
                 closeLayerContextMenu();
               }}

@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useEditorStore } from '../state/useEditorStore';
 import type { ToolType } from '../state/editorTypes';
 import { loadImage, calculateImageScale } from '../../utils/image';
@@ -12,10 +13,66 @@ import {
   Image as ImageIcon,
   Layers,
   PaintBucket,
+  Sparkles,
+  X,
 } from 'lucide-react';
+import { AIGeneratorDialog } from './AIGeneratorDialog';
+import { useAuth } from '../../contexts/AuthContext';
+import { LoginDialog } from '../../components/LoginDialog';
+import Tooltip from '@mui/material/Tooltip';
 
-export const ToolsPanel = () => {
+interface ToolsPanelProps {
+  openAIDialogOnMount?: boolean;
+  onAIDialogOpened?: () => void;
+}
+
+export const ToolsPanel = ({ openAIDialogOnMount, onAIDialogOpened }: ToolsPanelProps = {}) => {
   const { activeTool, setActiveTool, addLayer, setSelection } = useEditorStore();
+  const { user } = useAuth();
+  const [isAIGeneratorDialogOpen, setIsAIGeneratorDialogOpen] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [showAITooltip, setShowAITooltip] = useState(false);
+  const pendingAIOpenRef = useRef(false);
+  const loginSuccessRef = useRef(false); // Track if login succeeded (to not clear pending on close)
+  const aiToolButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Show tooltip every time the editor opens (but not if opening AI dialog)
+  useEffect(() => {
+    if (!openAIDialogOnMount) {
+      // Small delay to ensure the button is rendered
+      setTimeout(() => {
+        setShowAITooltip(true);
+      }, 500);
+    }
+  }, [openAIDialogOnMount]);
+
+  // Open AI dialog on mount if requested (e.g., after Stripe redirect)
+  useEffect(() => {
+    if (openAIDialogOnMount && user) {
+      setIsAIGeneratorDialogOpen(true);
+      onAIDialogOpened?.();
+    }
+  }, [openAIDialogOnMount, user, onAIDialogOpened]);
+
+  // Open AI dialog when user logs in and was trying to access it
+  useEffect(() => {
+    if (user && pendingAIOpenRef.current && !isLoginDialogOpen) {
+      // User just logged in and was trying to access AI tool
+      // Open AI dialog after a brief delay for state to settle
+      const timer = setTimeout(() => {
+        if (pendingAIOpenRef.current) {
+          pendingAIOpenRef.current = false;
+          loginSuccessRef.current = false;
+          setIsAIGeneratorDialogOpen(true);
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isLoginDialogOpen]);
+
+  const handleDismissTooltip = () => {
+    setShowAITooltip(false);
+  };
 
   const getLayerTypeName = (type: string): string => {
     const typeMap: Record<string, string> = {
@@ -42,7 +99,7 @@ export const ToolsPanel = () => {
     return `${baseName} ${index}`;
   };
 
-  const tools: { id: ToolType; label: string; icon: React.ReactNode; shortcut: string }[] = [
+  const tools: { id: ToolType | 'ai-textures'; label: string; icon: React.ReactNode; shortcut: string }[] = [
     {
       id: 'select',
       label: 'Move Tool',
@@ -103,10 +160,27 @@ export const ToolsPanel = () => {
       shortcut: 'X',
       icon: <Layers className="w-5 h-5" />,
     },
+    {
+      id: 'ai-textures',
+      label: 'AI Textures',
+      shortcut: 'A',
+      icon: <Sparkles className="w-5 h-5" />,
+    },
   ];
 
-  const handleToolSelect = (tool: ToolType) => {
-    setActiveTool(tool);
+  const handleToolSelect = (tool: ToolType | 'ai-textures') => {
+    // AI Textures: Check authentication first, then open dialog
+    if (tool === 'ai-textures') {
+      if (!user) {
+        pendingAIOpenRef.current = true;
+        setIsLoginDialogOpen(true);
+        return;
+      }
+      setIsAIGeneratorDialogOpen(true);
+      return;
+    }
+    
+    setActiveTool(tool as ToolType);
     
     // BRUSH TOOL: Auto-create or select a brush layer for convenience
     if (tool === 'brush') {
@@ -115,7 +189,6 @@ export const ToolsPanel = () => {
       
       if (existingBrushLayer) {
         setSelection(existingBrushLayer.id);
-        console.log('[BRUSH TOOL] Selected existing brush layer:', existingBrushLayer.name);
       } else {
         addLayer({
           type: 'brush',
@@ -130,7 +203,6 @@ export const ToolsPanel = () => {
           scaleX: 1,
           scaleY: 1,
         });
-        console.log('[BRUSH TOOL] Created new brush layer');
       }
       return;
     }
@@ -333,28 +405,152 @@ export const ToolsPanel = () => {
   };
 
   return (
-    <div className="h-full panel rounded-xl flex flex-col w-16 overflow-hidden shadow-lg">
-      {/* Tool Buttons */}
-      <div className="flex-1 p-2 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin">
-        {tools.map((tool) => (
-          <button
-            key={tool.id}
-            onClick={() => handleToolSelect(tool.id)}
-            className={`w-full p-2 rounded-lg transition-all duration-200 flex items-center justify-center relative group ${
-              activeTool === tool.id
-                ? 'bg-tesla-red text-white shadow-md shadow-tesla-red/40'
-                : 'text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/40'
-            }`}
-            title={`${tool.label} (${tool.shortcut})`}
-          >
-            {tool.icon}
-            {/* Tooltip */}
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              {tool.label} <span className="text-tesla-gray">({tool.shortcut})</span>
-            </div>
-          </button>
-        ))}
+    <>
+      <div className="h-full panel rounded-xl flex flex-col w-16 overflow-hidden shadow-lg">
+        {/* Tool Buttons */}
+        <div className="flex-1 p-2 space-y-1.5 overflow-y-auto overflow-x-hidden scrollbar-thin">
+          {tools.map((tool) => {
+            // AI Textures tool uses both MUI tooltip and custom tooltip
+            if (tool.id === 'ai-textures') {
+              return (
+                <Tooltip 
+                  key={tool.id}
+                  title={`${tool.label} (${tool.shortcut})`} 
+                  placement="right" 
+                  arrow
+                >
+                  <button
+                    ref={aiToolButtonRef}
+                    onClick={() => {
+                      handleToolSelect(tool.id);
+                      if (showAITooltip) {
+                        handleDismissTooltip();
+                      }
+                    }}
+                    className={`w-full p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
+                      isAIGeneratorDialogOpen
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : showAITooltip
+                        ? 'bg-blue-500/25 text-blue-400 ring-1 ring-blue-400/50'
+                        : 'text-tesla-gray hover:text-blue-400 hover:bg-blue-500/10'
+                    }`}
+                  >
+                    {tool.icon}
+                  </button>
+                </Tooltip>
+              );
+            }
+            
+            // All other tools use MUI Tooltip
+            return (
+              <Tooltip 
+                key={tool.id}
+                title={`${tool.label} (${tool.shortcut})`} 
+                placement="right" 
+                arrow
+              >
+                <button
+                  onClick={() => handleToolSelect(tool.id)}
+                  className={`w-full p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
+                    activeTool === tool.id
+                      ? 'bg-tesla-red text-white shadow-md shadow-tesla-red/40'
+                      : 'text-tesla-gray hover:text-tesla-light hover:bg-tesla-dark/40'
+                  }`}
+                >
+                  {tool.icon}
+                </button>
+              </Tooltip>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* AI Texture Generator Tooltip */}
+      {showAITooltip && aiToolButtonRef.current && (
+        <div className="fixed inset-0 z-[200] pointer-events-none">
+          {/* Tooltip */}
+          <div 
+            className="absolute pointer-events-auto"
+            style={{
+              left: `${aiToolButtonRef.current.getBoundingClientRect().right + 12}px`,
+              top: `${aiToolButtonRef.current.getBoundingClientRect().top + aiToolButtonRef.current.getBoundingClientRect().height / 2}px`,
+              transform: 'translateY(-50%)',
+            }}
+          >
+            <div className="relative bg-[#1c1c1e] rounded-lg p-3 shadow-xl border border-white/10 max-w-[200px]">
+              {/* Arrow pointing LEFT to button */}
+              <div 
+                className="absolute w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[8px] border-r-[#1c1c1e]"
+                style={{
+                  left: '-8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                }}
+              />
+              
+              {/* Content */}
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                    <h3 className="text-white font-medium text-xs">AI Textures</h3>
+                  </div>
+                  <p className="text-white/60 text-[10px] leading-relaxed mb-2">
+                    Generate unique wrap textures with AI
+                  </p>
+                  <button
+                    onClick={() => {
+                      handleDismissTooltip();
+                      if (!user) {
+                        pendingAIOpenRef.current = true;
+                        setIsLoginDialogOpen(true);
+                      } else {
+                        setIsAIGeneratorDialogOpen(true);
+                      }
+                    }}
+                    className="px-2.5 py-1 bg-blue-500 hover:bg-blue-400 text-white text-[10px] font-medium rounded transition-colors"
+                  >
+                    Try it
+                  </button>
+                </div>
+                <button
+                  onClick={handleDismissTooltip}
+                  className="flex-shrink-0 p-0.5 hover:bg-white/10 rounded transition-colors -mt-0.5 -mr-0.5"
+                  aria-label="Close tooltip"
+                >
+                  <X className="w-3 h-3 text-white/40 hover:text-white/60" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Dialog */}
+      <LoginDialog
+        isOpen={isLoginDialogOpen}
+        onClose={() => {
+          setIsLoginDialogOpen(false);
+          // Only clear pending if user cancelled (not after successful login)
+          // loginSuccessRef tracks if onSuccess was just called
+          if (!loginSuccessRef.current) {
+            pendingAIOpenRef.current = false;
+          }
+          loginSuccessRef.current = false; // Reset for next time
+        }}
+        onSuccess={() => {
+          // Mark that login succeeded so onClose doesn't clear pending
+          loginSuccessRef.current = true;
+          // Close login dialog - the useEffect will detect user change and open AI dialog
+          setIsLoginDialogOpen(false);
+        }}
+      />
+
+      {/* AI Generator Dialog */}
+      <AIGeneratorDialog
+        isOpen={isAIGeneratorDialogOpen}
+        onClose={() => setIsAIGeneratorDialogOpen(false)}
+      />
+    </>
   );
 };

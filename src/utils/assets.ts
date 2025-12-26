@@ -44,8 +44,6 @@ export const getTemplateUrl = (folderName: string): string => {
     return module;
   }
   // Fallback: try direct import path
-  console.warn(`Template not found: ${path}, trying fallback`);
-  // In development, Vite serves from project root
   return new URL(`../assets/wraps/${folderName}/template.png`, import.meta.url).href;
 };
 
@@ -59,7 +57,6 @@ export const getVehicleImageUrl = (folderName: string): string => {
     return module;
   }
   // Fallback: try direct import path
-  console.warn(`Vehicle image not found: ${path}, trying fallback`);
   return new URL(`../assets/wraps/${folderName}/vehicle_image.png`, import.meta.url).href;
 };
 

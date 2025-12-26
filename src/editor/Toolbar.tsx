@@ -16,6 +16,7 @@ import { ProfileMenu } from '../components/ProfileMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginDialog } from '../components/LoginDialog';
 import type { Stage as StageType } from 'konva/lib/Stage';
+import Tooltip from '@mui/material/Tooltip';
 
 interface ToolbarProps {
   stageRef: React.RefObject<StageType | null>;
@@ -288,37 +289,34 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
 
         {/* File Operations */}
         <div className="flex items-center gap-1 border-r border-tesla-dark/50 pr-2 sm:pr-3 flex-shrink-0">
-          <button
-            onClick={handleNewProject}
-            className="px-2 sm:px-3 py-1.5 text-xs font-medium text-tesla-light bg-tesla-black/70 rounded hover:bg-tesla-black transition-colors relative group"
-          >
-            New
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              New Project
-            </div>
-          </button>
-          <button
-            onClick={handleOpenProject}
-            className="px-2 sm:px-3 py-1.5 text-xs font-medium text-tesla-light bg-tesla-black/70 rounded hover:bg-tesla-black transition-colors relative group"
-          >
-            Open
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              Open Project (.twrap)
-            </div>
-          </button>
-          <button
-            onClick={handleSaveProject}
-            className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded transition-colors relative group ${
-              isDirty 
-                ? 'text-white bg-tesla-red hover:bg-tesla-red/80' 
-                : 'text-tesla-light bg-tesla-black/70 hover:bg-tesla-black'
-            }`}
-          >
-            Save
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              Save Project
-            </div>
-          </button>
+          <Tooltip title="New Project" placement="bottom" arrow>
+            <button
+              onClick={handleNewProject}
+              className="px-2 sm:px-3 py-1.5 text-xs font-medium text-tesla-light bg-tesla-black/70 rounded hover:bg-tesla-black transition-colors"
+            >
+              New
+            </button>
+          </Tooltip>
+          <Tooltip title="Open Project" placement="bottom" arrow>
+            <button
+              onClick={handleOpenProject}
+              className="px-2 sm:px-3 py-1.5 text-xs font-medium text-tesla-light bg-tesla-black/70 rounded hover:bg-tesla-black transition-colors"
+            >
+              Open
+            </button>
+          </Tooltip>
+          <Tooltip title="Save Project" placement="bottom" arrow>
+            <button
+              onClick={handleSaveProject}
+              className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                isDirty 
+                  ? 'text-white bg-tesla-red hover:bg-tesla-red/80' 
+                  : 'text-tesla-light bg-tesla-black/70 hover:bg-tesla-black'
+              }`}
+            >
+              Save
+            </button>
+          </Tooltip>
           {/* Hidden file inputs */}
           <input
             ref={fileInputRef}
@@ -342,30 +340,32 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
 
         {/* Undo/Redo */}
         <div className="flex items-center gap-1 sm:gap-1.5 border-r border-tesla-dark/50 pr-2 sm:pr-3 flex-shrink-0">
-          <button
-            onClick={undo}
-            disabled={!canUndo}
-            className="btn-icon disabled:opacity-30 disabled:cursor-not-allowed relative group"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-            </svg>
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              Undo <span className="text-tesla-gray">(Ctrl+Z)</span>
-            </div>
-          </button>
-          <button
-            onClick={redo}
-            disabled={!canRedo}
-            className="btn-icon disabled:opacity-30 disabled:cursor-not-allowed relative group"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-            </svg>
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              Redo <span className="text-tesla-gray">(Ctrl+Y)</span>
-            </div>
-          </button>
+          <Tooltip title="Undo (Ctrl+Z)" placement="bottom" arrow>
+            <span>
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                className="btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+              </button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Redo (Ctrl+Y)" placement="bottom" arrow>
+            <span>
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                className="btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                </svg>
+              </button>
+            </span>
+          </Tooltip>
         </div>
 
         {/* Project Info */}
@@ -399,17 +399,16 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
         {/* Actions */}
         <div className="flex items-center gap-1 sm:gap-2 ml-auto flex-shrink-0">
           <div className="relative z-[100]" ref={infoDropdownRef}>
-            <button
-              onClick={() => setIsInfoDropdownOpen(!isInfoDropdownOpen)}
-              className="btn-icon relative group"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="absolute right-full mr-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                Information and support
-              </div>
-            </button>
+            <Tooltip title="Information and support" placement="bottom" arrow>
+              <button
+                onClick={() => setIsInfoDropdownOpen(!isInfoDropdownOpen)}
+                className="btn-icon"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </Tooltip>
             
             {/* Dropdown Menu */}
             {isInfoDropdownOpen && (
@@ -450,30 +449,28 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
               </div>
             )}
           </div>
-          <button
-            onClick={onOpen3DPreview}
-            className="btn-secondary flex items-center gap-1 sm:gap-2 px-2 sm:px-4 relative group"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <span className="hidden sm:inline">3D Preview</span>
-            <div className="absolute right-full mr-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              3D Preview
-            </div>
-          </button>
-          <button
-            onClick={handleExport}
-            className="btn-primary flex items-center gap-1 sm:gap-2 px-2 sm:px-4 relative group"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span className="hidden sm:inline">Export PNG</span>
-            <div className="absolute right-full mr-3 px-3 py-1.5 bg-tesla-black/95 border border-tesla-dark/50 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              Export PNG
-            </div>
-          </button>
+          <Tooltip title="3D Preview" placement="bottom" arrow>
+            <button
+              onClick={onOpen3DPreview}
+              className="btn-secondary flex items-center gap-1 sm:gap-2 px-2 sm:px-4"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span className="hidden sm:inline">3D Preview</span>
+            </button>
+          </Tooltip>
+          <Tooltip title="Export PNG" placement="bottom" arrow>
+            <button
+              onClick={handleExport}
+              className="btn-primary flex items-center gap-1 sm:gap-2 px-2 sm:px-4"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span className="hidden sm:inline">Export PNG</span>
+            </button>
+          </Tooltip>
             {/* Profile Menu (far right) */}
             <ProfileMenu />
         </div>
