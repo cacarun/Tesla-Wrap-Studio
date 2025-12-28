@@ -32,8 +32,8 @@ interface GodotViewerProps {
   stageRef: React.RefObject<StageType | null>;
 }
 
-// Public URL for the .pck file in Supabase Storage
-const PCK_URL = 'https://mehvzkfcitccchzpqyfd.supabase.co/storage/v1/object/public/godot-assets/index.pck';
+// Public URL for the .pck file in Cloudflare R2
+const PCK_URL = 'https://lfs.tesla-wrap.com/index.pck';
 
 // Local storage key for first-time hint
 const VIEWER_HINT_SHOWN_KEY = 'tesla-wrap-viewer-hint-shown';
@@ -211,7 +211,7 @@ export const GodotViewer = ({ isOpen, onClose, stageRef }: GodotViewerProps) => 
         texture: dataUrl,
       });
     } catch (err) {
-      console.error('[GodotViewer] Failed to send texture:', err);
+      // Failed to send texture
     }
   }, [stageRef, godotReady, sendToGodot]);
 

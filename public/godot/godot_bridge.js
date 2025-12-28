@@ -29,8 +29,6 @@
    * Initialize the Godot bridge
    */
   function init() {
-    console.log('[GodotBridge] Initializing...');
-
     // Create the global godot object
     window.godot = {
       // =====================================================================
@@ -43,16 +41,13 @@
        */
       sendMessage: function(message) {
         if (!message || typeof message !== 'object') {
-          console.error('[GodotBridge] Invalid message:', message);
           return false;
         }
 
         if (!message.type) {
-          console.error('[GodotBridge] Message missing type:', message);
           return false;
         }
 
-        console.log('[GodotBridge] Queueing message:', message.type);
         messageQueue.push(JSON.stringify(message));
         return true;
       },
@@ -198,11 +193,8 @@
        */
       onGodotMessage: function(event) {
         if (!event || !event.type) {
-          console.warn('[GodotBridge] Invalid event from Godot:', event);
           return;
         }
-
-        console.log('[GodotBridge] Received from Godot:', event.type, event.data);
 
         // Update internal state
         switch (event.type) {
@@ -214,7 +206,6 @@
             currentModelId = event.data?.modelId;
             break;
           case 'error':
-            console.error('[GodotBridge] Godot error:', event.data?.message);
             break;
         }
 
@@ -224,7 +215,7 @@
           try {
             callback(event.data);
           } catch (err) {
-            console.error('[GodotBridge] Listener error:', err);
+            // Ignore listener errors
           }
         });
 
@@ -234,7 +225,7 @@
           try {
             callback(event);
           } catch (err) {
-            console.error('[GodotBridge] Global listener error:', err);
+            // Ignore listener errors
           }
         });
 
@@ -348,7 +339,6 @@
     window.addEventListener('message', function(event) {
       // Accept messages from parent (React app)
       if (event.data && event.data.type) {
-        console.log('[GodotBridge] Received postMessage:', event.data.type);
         window.godot.sendMessage(event.data);
       }
     });
@@ -365,7 +355,6 @@
         window.godot.onGodotMessage(event);
         return true;
       } catch (err) {
-        console.error('[GodotBridge] godot_sendMessage error:', err);
         return false;
       }
     };
@@ -382,8 +371,6 @@
       }
       return messageQueue.shift();
     };
-
-    console.log('[GodotBridge] Ready. Use window.godot to communicate with Godot.');
   }
 
   // Initialize when DOM is ready
