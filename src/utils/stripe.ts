@@ -80,21 +80,21 @@ export const CREDIT_PACKAGES = [
   { 
     id: 'small', 
     credits: 10, 
-    price: 1, 
+    price: 3, 
     priceId: import.meta.env.VITE_STRIPE_PRICE_SMALL || 'price_small',
     popular: false 
   },
   { 
     id: 'medium', 
     credits: 50, 
-    price: 4, 
+    price: 13, 
     priceId: import.meta.env.VITE_STRIPE_PRICE_MEDIUM || 'price_medium',
     popular: false 
   },
   { 
     id: 'large', 
     credits: 100, 
-    price: 7, 
+    price: 20, 
     priceId: import.meta.env.VITE_STRIPE_PRICE_LARGE || 'price_large',
     popular: true 
   },

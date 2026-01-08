@@ -127,9 +127,11 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, state.loading]);
 
-  // Reset state on open
+  // Reset state on open (only when dialog first opens, not when credits change)
+  const prevIsOpenRef = useRef(isOpen);
   useEffect(() => {
-    if (isOpen) {
+    // Only reset when dialog transitions from closed to open
+    if (isOpen && !prevIsOpenRef.current) {
       setState({
         loading: false,
         error: null,
@@ -137,17 +139,25 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
         progress: 0,
         timeElapsed: 0,
       });
-      setShowCreditsPanel(false);
       setReferenceImage(null);
       startTimeRef.current = null;
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-      // Focus prompt input
-      setTimeout(() => promptInputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen]); // Removed credits from dependencies to prevent reset when credits refresh
+
+  // Focus prompt input when dialog opens and credits are available
+  useEffect(() => {
+    if (isOpen && credits && credits.credits > 0 && !state.currentImage) {
+      const timer = setTimeout(() => {
+        promptInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, credits?.credits, state.currentImage]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -174,6 +184,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
     }
     prevUserRef.current = user;
   }, [isOpen, user, onClose]);
+
 
   // Apply mask to image
   const applyMask = useCallback(async (imageUrl: string): Promise<string> => {
@@ -326,12 +337,25 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
       
       const originalDataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
+        reader.onload = () => {
+          if (reader.result && typeof reader.result === 'string') {
+            resolve(reader.result);
+          } else {
+            reject(new Error('Failed to read image data'));
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read image file'));
         reader.readAsDataURL(blob);
       });
       
-      const previewDataUrl = await applyMask(originalDataUrl);
+      // Apply mask for preview, fallback to original if mask fails
+      let previewDataUrl: string;
+      try {
+        previewDataUrl = await applyMask(originalDataUrl);
+      } catch (maskError) {
+        console.warn('Failed to apply mask, using original image:', maskError);
+        previewDataUrl = originalDataUrl;
+      }
 
       // Refresh credits
       if (user) {
@@ -341,10 +365,16 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
 
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       
+      const generatedImage = { original: originalDataUrl, preview: previewDataUrl };
+      console.log('Generated image ready:', { 
+        originalLength: originalDataUrl.length, 
+        previewLength: previewDataUrl.length 
+      });
+      
       setState({
         loading: false,
         error: null,
-        currentImage: { original: originalDataUrl, preview: previewDataUrl },
+        currentImage: generatedImage,
         progress: 100,
         timeElapsed: startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0,
       });
@@ -357,6 +387,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
         error: error instanceof Error ? error.message : 'Generation failed',
         progress: 0,
         timeElapsed: 0,
+        // Preserve currentImage if it exists
       }));
       startTimeRef.current = null;
     }
@@ -599,16 +630,6 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                   </>
                 )}
               </button>
-              
-              {/* Buy credits link */}
-              {noCredits && (
-                <button
-                  onClick={() => setShowCreditsPanel(true)}
-                  className="w-full mt-2 py-2 text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                >
-                  Get more credits →
-                </button>
-              )}
             </div>
           </div>
 
@@ -634,14 +655,22 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                     )}
                   </div>
                 </div>
-              ) : hasResult ? (
+              ) : hasResult && state.currentImage ? (
                 /* Result */
-                <div className="w-full max-w-lg">
-                  <div className="relative aspect-square rounded-xl overflow-hidden bg-[#0a0a0c] border border-white/10">
+                <div className="w-full h-full flex items-center justify-center p-6">
+                  <div className="w-full max-w-lg aspect-square relative rounded-xl overflow-hidden bg-[#0a0a0c] border-2 border-white/20 shadow-2xl">
                     <img
-                      src={state.currentImage!.preview}
+                      src={state.currentImage.preview}
                       alt="Generated design"
                       className="w-full h-full object-contain"
+                      onLoad={() => console.log('Preview image loaded successfully')}
+                      onError={(e) => {
+                        console.error('Failed to load preview image, trying original');
+                        // Fallback to original if preview fails
+                        if (state.currentImage) {
+                          (e.target as HTMLImageElement).src = state.currentImage.original;
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -659,7 +688,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
             </div>
 
             {/* Action Bar - Only shown when result exists */}
-            {hasResult && !state.loading && (
+            {state.currentImage && !state.loading && (
               <div className="flex items-center gap-3 p-4 border-t border-white/[0.08] bg-[#141416]">
                 <button
                   onClick={handleIterate}
@@ -672,7 +701,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                 </button>
                 <button
                   onClick={handleAddToCanvas}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white text-black font-medium text-sm hover:bg-white/90 transition-all"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white text-black font-medium text-sm hover:bg-white/90 transition-all shadow-lg"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -689,7 +718,15 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-10">
             <div className="w-full max-w-sm bg-[#1c1c1f] rounded-xl border border-white/10 overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
-                <h3 className="text-sm font-medium text-white">Get Credits</h3>
+                <div>
+                  <h3 className="text-sm font-medium text-white">Get Credits</h3>
+                  <p className="text-xs text-green-400 mt-0.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    One-time payment • No subscription
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowCreditsPanel(false)}
                   className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white"
@@ -726,14 +763,23 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                     {purchaseLoading && purchasePackageId === pkg.id ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
                     ) : (
-                      <span className="text-sm font-semibold text-white">${pkg.price}</span>
+                      <div className="text-right">
+                        <span className="text-sm font-semibold text-white">${pkg.price}</span>
+                        <p className="text-[10px] text-white/40">one-time</p>
+                      </div>
                     )}
                   </button>
                 ))}
               </div>
               
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 space-y-2">
                 <p className="text-xs text-white/30 text-center">1 credit = 1 design generation</p>
+                <div className="flex items-center justify-center gap-2 pt-2 border-t border-white/[0.08]">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <p className="text-xs text-white/50 text-center">Secure one-time payment via Stripe • No recurring charges</p>
+                </div>
               </div>
             </div>
           </div>

@@ -103,8 +103,14 @@ export function CreditPurchaseDialog({ isOpen, onClose, onPurchaseSuccess }: Cre
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
           <div>
             <h2 className="text-lg font-medium text-white">Purchase Credits</h2>
+            <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              One-time payment • No subscription
+            </p>
             {credits && (
-              <p className="text-xs text-white/50 mt-0.5">
+              <p className="text-xs text-white/50 mt-1">
                 Current: {credits.credits} credit{credits.credits !== 1 ? 's' : ''}
               </p>
             )}
@@ -159,6 +165,7 @@ export function CreditPurchaseDialog({ isOpen, onClose, onPurchaseSuccess }: Cre
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold text-white">${pkg.price.toFixed(0)}</div>
+                    <p className="text-[10px] text-white/40 mt-0.5">one-time</p>
                     {loading && selectedPackage === pkg.id && (
                       <div className="flex items-center gap-1 text-xs text-white/40 mt-1">
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -174,10 +181,10 @@ export function CreditPurchaseDialog({ isOpen, onClose, onPurchaseSuccess }: Cre
           <div className="pt-3 border-t border-white/[0.08] space-y-2">
             <div className="flex items-center justify-center gap-2 text-white/40">
               <CreditCard className="w-4 h-4" />
-              <span className="text-xs">Secure payment via Stripe</span>
+              <span className="text-xs">Secure one-time payment via Stripe</span>
             </div>
             <p className="text-[10px] text-white/30 text-center">
-              Credits are added instantly after successful payment. All transactions are securely processed.
+              Credits are added instantly after successful payment. One-time purchase, no recurring charges.
             </p>
           </div>
         </div>
