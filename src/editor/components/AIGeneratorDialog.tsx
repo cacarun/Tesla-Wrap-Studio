@@ -298,6 +298,9 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
       const imageInput: string[] = [templateBase64];
       if (referenceImage) imageInput.push(referenceImage);
       
+      // Format prompt as specified
+      const formattedPrompt = `fill the white Template:\n${prompt.trim()}`;
+      
       const { data: predictionData, error: createError } = await supabase.functions.invoke(
         REPLICATE_EDGE_FUNCTION,
         {
@@ -306,7 +309,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
             action: 'create',
             model: AI_MODEL_ID,
             input: {
-              prompt: prompt.trim(),
+              prompt: formattedPrompt,
               image_input: imageInput,
               aspect_ratio: '1:1',
               resolution: '1K',
