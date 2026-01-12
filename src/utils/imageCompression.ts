@@ -6,7 +6,6 @@
 const MAX_SIZE_BYTES = 995328 // 0.95MB
 const MIN_QUALITY = 0.1
 const MAX_QUALITY = 0.95
-const QUALITY_STEP = 0.05
 
 export interface CompressionResult {
   blob: Blob
@@ -165,6 +164,11 @@ export async function compressImageToSizeLimit(
         `Final size: ${compressedSize} bytes (${(compressedSize / 1024 / 1024).toFixed(2)}MB)`
       )
     }
+  }
+  
+  // Final safety check - this should never happen due to earlier checks, but satisfies TypeScript
+  if (!compressedBlob) {
+    throw new Error('Failed to compress image: blob is null')
   }
   
   return {
