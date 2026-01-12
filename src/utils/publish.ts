@@ -184,7 +184,31 @@ export async function publishDesign(
 
     // Convert data URL to blob
     const response = await fetch(previewDataUrl)
-    const previewBlob = await response.blob()
+    const originalPreviewBlob = await response.blob()
+    
+    // Compress preview image server-side if needed (> 0.95MB)
+    let previewBlob: Blob = originalPreviewBlob
+    if (originalPreviewBlob.size > 995328) { // 0.95MB
+      console.log(`Preview image too large (${(originalPreviewBlob.size / 1024 / 1024).toFixed(2)}MB), compressing...`)
+      const formData = new FormData()
+      formData.append('file', originalPreviewBlob, 'preview.png')
+      
+      try {
+        const compressResponse = await fetch(`${import.meta.env.VITE_GALLERY_URL}/api/compress-image`, {
+          method: 'POST',
+          body: formData,
+        })
+        
+        if (compressResponse.ok) {
+          previewBlob = await compressResponse.blob()
+          console.log(`Compressed: ${(originalPreviewBlob.size / 1024 / 1024).toFixed(2)}MB -> ${(previewBlob.size / 1024 / 1024).toFixed(2)}MB`)
+        } else {
+          console.warn('Compression API failed, using original image')
+        }
+      } catch (err) {
+        console.warn('Compression request failed, using original image:', err)
+      }
+    }
 
     // Upload preview image
     const { error: previewError } = await supabase.storage
@@ -192,6 +216,7 @@ export async function publishDesign(
       .upload(previewPath, previewBlob, {
         cacheControl: '3600',
         upsert: false,
+        contentType: 'image/png',
       })
 
     if (previewError) {

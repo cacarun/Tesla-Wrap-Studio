@@ -82,7 +82,31 @@ export const saveProjectToSupabase = async (
   });
 
   // Convert preview image to blob
-  const previewBlob = await dataUrlToBlob(previewImageDataUrl);
+  const originalPreviewBlob = await dataUrlToBlob(previewImageDataUrl);
+  
+  // Compress preview image server-side if needed (> 0.95MB)
+  let previewBlob: Blob = originalPreviewBlob;
+  if (originalPreviewBlob.size > 995328) { // 0.95MB
+    console.log(`Preview image too large (${(originalPreviewBlob.size / 1024 / 1024).toFixed(2)}MB), compressing...`);
+    const formData = new FormData();
+    formData.append('file', originalPreviewBlob, 'preview.png');
+    
+    try {
+      const compressResponse = await fetch(`${import.meta.env.VITE_GALLERY_URL}/api/compress-image`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (compressResponse.ok) {
+        previewBlob = await compressResponse.blob();
+        console.log(`Compressed: ${(originalPreviewBlob.size / 1024 / 1024).toFixed(2)}MB -> ${(previewBlob.size / 1024 / 1024).toFixed(2)}MB`);
+      } else {
+        console.warn('Compression API failed, using original image');
+      }
+    } catch (err) {
+      console.warn('Compression request failed, using original image:', err);
+    }
+  }
   
   // Generate thumbnail client-side (200x200 WebP)
   const thumbnailBlob = await generateThumbnail(previewImageDataUrl, 200);
@@ -130,6 +154,7 @@ export const saveProjectToSupabase = async (
       .upload(previewFileName, previewBlob, {
         cacheControl: '31536000', // 1 year cache (unique filename)
         upsert: false,
+        contentType: 'image/png',
       }),
     supabase.storage
       .from('designs')
