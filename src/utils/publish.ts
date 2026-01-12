@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import type { Stage } from 'konva/lib/Stage'
 import type { Line as KonvaLine } from 'konva/lib/shapes/Line'
 import type { ProjectFile } from '../editor/state/useEditorStore'
+import { compressImageToSizeLimit } from './imageCompression'
 import JSZip from 'jszip'
 
 /**
@@ -184,14 +185,23 @@ export async function publishDesign(
 
     // Convert data URL to blob
     const response = await fetch(previewDataUrl)
-    const previewBlob = await response.blob()
+    const originalPreviewBlob = await response.blob()
+
+    // Compress preview image to ensure it's under 0.95MB
+    const compressionResult = await compressImageToSizeLimit(originalPreviewBlob)
+    console.log(
+      `Compressed preview: ${(compressionResult.originalSize / 1024 / 1024).toFixed(2)}MB -> ` +
+      `${(compressionResult.compressedSize / 1024 / 1024).toFixed(2)}MB ` +
+      `(quality: ${compressionResult.quality.toFixed(2)})`
+    )
 
     // Upload preview image
     const { error: previewError } = await supabase.storage
       .from('designs')
-      .upload(previewPath, previewBlob, {
+      .upload(previewPath, compressionResult.blob, {
         cacheControl: '3600',
         upsert: false,
+        contentType: 'image/png',
       })
 
     if (previewError) {
