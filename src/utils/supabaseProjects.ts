@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { ProjectFile, SerializedLayer } from '../editor/state/useEditorStore';
 import { loadProjectFromFile } from './projectFile';
-import { compressImageToSizeLimit } from './imageCompression';
 import JSZip from 'jszip';
 
 export interface SavedDesign {
@@ -83,15 +82,7 @@ export const saveProjectToSupabase = async (
   });
 
   // Convert preview image to blob
-  const originalPreviewBlob = await dataUrlToBlob(previewImageDataUrl);
-  
-  // Compress preview image to ensure it's under 0.95MB
-  const compressionResult = await compressImageToSizeLimit(originalPreviewBlob);
-  console.log(
-    `Compressed preview: ${(compressionResult.originalSize / 1024 / 1024).toFixed(2)}MB -> ` +
-    `${(compressionResult.compressedSize / 1024 / 1024).toFixed(2)}MB ` +
-    `(quality: ${compressionResult.quality.toFixed(2)})`
-  );
+  const previewBlob = await dataUrlToBlob(previewImageDataUrl);
   
   // Generate thumbnail client-side (200x200 WebP)
   const thumbnailBlob = await generateThumbnail(previewImageDataUrl, 200);
@@ -136,10 +127,9 @@ export const saveProjectToSupabase = async (
       }),
     supabase.storage
       .from('designs')
-      .upload(previewFileName, compressionResult.blob, {
+      .upload(previewFileName, previewBlob, {
         cacheControl: '31536000', // 1 year cache (unique filename)
         upsert: false,
-        contentType: 'image/png',
       }),
     supabase.storage
       .from('designs')

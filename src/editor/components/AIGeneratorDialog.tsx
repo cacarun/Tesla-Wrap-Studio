@@ -490,14 +490,19 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
       />
       
       {/* Dialog */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-[#121218] rounded-2xl border border-white/10 shadow-2xl">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl">
         
         {/* Header - Compact */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.08] bg-[#0a0a0c]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.08] bg-[#1c1c1f]">
           <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30 flex items-center justify-center">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
             <span className="text-sm font-medium text-white">AI Design</span>
             {!loadingCredits && credits !== null && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${credits.credits > 0 ? 'bg-[#E31937]/20 text-[#ff3c5a]' : 'bg-red-500/20 text-red-300'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${credits.credits > 0 ? 'bg-purple-500/20 text-purple-300' : 'bg-red-500/20 text-red-300'}`}>
                 {credits.credits} credit{credits.credits !== 1 ? 's' : ''}
               </span>
             )}
@@ -516,22 +521,22 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
         </div>
 
         {/* Main Content */}
-        <div className="flex h-[calc(90vh-56px)] min-h-0 overflow-hidden">
+        <div className="flex h-[calc(90vh-56px)] overflow-hidden">
           
           {/* Left Panel - Input */}
-          <div className="w-[340px] flex-shrink-0 border-r border-white/[0.08] flex flex-col bg-[#08080c]">
+          <div className="w-[340px] flex-shrink-0 border-r border-white/[0.08] flex flex-col bg-[#1a1a1d]">
             
             {/* Prompt Area */}
             <div className="flex-1 p-4 overflow-y-auto">
               <div className="space-y-4">
                 {/* Reference indicator */}
                 {referenceImage && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-[#E31937]/10 border border-[#E31937]/30">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
                     <div className="w-12 h-12 rounded-md overflow-hidden bg-black/30 flex-shrink-0">
                       <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-[#ff3c5a]">Iterating on design</p>
+                      <p className="text-xs font-medium text-blue-300">Iterating on design</p>
                       <p className="text-xs text-white/50 truncate">Refining previous result</p>
                     </div>
                     <button
@@ -555,7 +560,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe your wrap design..."
                     rows={4}
-                    className="w-full px-3 py-2.5 rounded-lg bg-white/[0.06] border border-white/[0.1] text-white text-sm placeholder-white/30 focus:outline-none focus:border-[#E31937]/50 focus:ring-2 focus:ring-[#E31937]/20 resize-none"
+                    className="w-full px-3 py-2.5 rounded-lg bg-white/[0.06] border border-white/[0.1] text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-500/50 resize-none"
                     maxLength={500}
                     disabled={state.loading}
                   />
@@ -578,7 +583,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                   </button>
                   
                   {showSuggestions && (
-                    <div className="absolute top-full left-0 mt-1 w-48 max-h-40 overflow-y-auto bg-[#121218] border border-white/10 rounded-lg shadow-xl z-50 py-1">
+                    <div className="absolute top-full left-0 mt-1 w-48 max-h-40 overflow-y-auto bg-[#252528] border border-white/10 rounded-lg shadow-xl z-50 py-1">
                       {PROMPT_SUGGESTIONS.map((suggestion, index) => (
                         <button
                           key={index}
@@ -609,7 +614,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm transition-all ${
                   state.loading || !prompt.trim() || noCredits
                     ? 'bg-white/[0.06] text-white/30 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-[#E31937] to-[#ff3c5a] text-white hover:from-[#c0152f] hover:to-[#E31937] shadow-lg shadow-[#E31937]/20'
+                    : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-400 hover:to-blue-400 shadow-lg shadow-purple-500/20'
                 }`}
               >
                 {state.loading ? (
@@ -632,16 +637,16 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
           </div>
 
           {/* Right Panel - Preview */}
-          <div className="flex-1 flex flex-col bg-[#08080c] min-h-0">
+          <div className="flex-1 flex flex-col bg-[#0f0f11]">
             
             {/* Preview Area */}
-            <div className="flex-1 flex items-center justify-center p-6 min-h-0 overflow-y-auto">
+            <div className="flex-1 flex items-center justify-center p-6">
               {state.loading ? (
                 /* Loading State */
                 <div className="text-center space-y-4">
                   <div className="relative w-20 h-20 mx-auto">
-                    <div className="absolute inset-0 rounded-full border-4 border-[#E31937]/20"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#E31937] animate-spin"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-sm font-semibold text-white">{Math.round(state.progress)}%</span>
                     </div>
@@ -655,7 +660,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                 </div>
               ) : hasResult && state.currentImage ? (
                 /* Result */
-                <div className="w-full flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center p-6">
                   <div className="w-full max-w-lg aspect-square relative rounded-xl overflow-hidden bg-[#0a0a0c] border-2 border-white/20 shadow-2xl">
                     <img
                       src={state.currentImage.preview}
@@ -687,7 +692,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
 
             {/* Action Bar - Only shown when result exists */}
             {state.currentImage && !state.loading && (
-              <div className="flex items-center gap-3 p-4 border-t border-white/[0.08] bg-[#0a0a0c] flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 border-t border-white/[0.08] bg-[#141416]">
                 <button
                   onClick={handleIterate}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-white/10 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-all"
@@ -714,7 +719,7 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
         {/* Credits Panel Overlay */}
         {showCreditsPanel && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-10">
-            <div className="w-full max-w-sm bg-[#121218] rounded-xl border border-white/10 overflow-hidden">
+            <div className="w-full max-w-sm bg-[#1c1c1f] rounded-xl border border-white/10 overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-white/[0.08]">
                 <div>
                   <h3 className="text-sm font-medium text-white">Get Credits</h3>
@@ -748,14 +753,14 @@ export const AIGeneratorDialog = ({ isOpen, onClose }: AIGeneratorDialogProps) =
                     disabled={purchaseLoading}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                       pkg.popular
-                        ? 'border-[#E31937]/40 bg-[#E31937]/10'
+                        ? 'border-purple-500/40 bg-purple-500/10'
                         : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
                     } ${purchaseLoading ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-white">{pkg.credits} credits</span>
                       {pkg.popular && (
-                        <span className="text-[9px] px-1.5 py-0.5 bg-[#E31937] text-white rounded-full font-bold">BEST</span>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-purple-500 text-white rounded-full font-bold">BEST</span>
                       )}
                     </div>
                     {purchaseLoading && purchasePackageId === pkg.id ? (
