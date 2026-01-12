@@ -1,10 +1,17 @@
 /**
  * Image compression utility to ensure images are below a specified size limit
- * Uses adaptive quality reduction for PNG images while maintaining dimensions
+ * 
+ * IMPORTANT: PNG format does NOT support quality parameter in canvas.toBlob()
+ * PNG is always lossless. To compress while keeping PNG output, we:
+ * 1. First try PNG as-is (re-encoding sometimes helps)
+ * 2. If still too large, compress using WebP (which supports quality)
+ * 3. Then re-encode the WebP result back to PNG
+ * 
+ * This gives us lossy compression while maintaining PNG output format.
  */
 
 const MAX_SIZE_BYTES = 995328 // 0.95MB
-const MIN_QUALITY = 0.1
+const MIN_QUALITY = 0.3
 const MAX_QUALITY = 0.95
 
 export interface CompressionResult {
@@ -44,12 +51,48 @@ async function loadImage(source: File | Blob | string): Promise<HTMLImageElement
 }
 
 /**
- * Compresses a PNG image to be under the specified size limit
- * Uses adaptive quality reduction - starts high and reduces until under limit
+ * Convert a blob to PNG format via canvas
+ */
+async function convertToPng(blob: Blob): Promise<Blob> {
+  const img = await loadImage(blob)
+  
+  const canvas = document.createElement('canvas')
+  canvas.width = img.width
+  canvas.height = img.height
+  
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('Failed to get canvas context')
+  }
+  
+  ctx.drawImage(img, 0, 0)
+  
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (pngBlob) => {
+        if (pngBlob) {
+          resolve(pngBlob)
+        } else {
+          reject(new Error('Failed to convert to PNG'))
+        }
+      },
+      'image/png'
+    )
+  })
+}
+
+/**
+ * Compresses an image to be under the specified size limit
+ * Output is always PNG format
+ * 
+ * Strategy:
+ * 1. Try PNG re-encoding first (sometimes helps)
+ * 2. If too large, use WebP compression with quality reduction
+ * 3. Convert the compressed WebP back to PNG
  * 
  * @param imageSource - Image as File, Blob, or data URL
  * @param maxSizeBytes - Maximum size in bytes (default: 0.95MB)
- * @returns Compressed blob with metadata
+ * @returns Compressed blob with metadata (as PNG)
  */
 export async function compressImageToSizeLimit(
   imageSource: File | Blob | string,
@@ -84,37 +127,61 @@ export async function compressImageToSizeLimit(
   // Draw image to canvas
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
   
-  // Try different quality levels until we're under the limit
-  let quality = MAX_QUALITY
-  let compressedBlob: Blob | null = null
-  let compressedSize = originalSize
+  // Step 1: Try PNG first - re-encoding sometimes helps
+  let pngBlob: Blob | null = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/png')
+  })
   
-  // Binary search approach for efficiency
+  if (!pngBlob) {
+    throw new Error('Failed to create PNG blob')
+  }
+  
+  // If PNG is already under limit, return it
+  if (pngBlob.size <= maxSizeBytes) {
+    console.log(`PNG already under limit: ${(pngBlob.size / 1024 / 1024).toFixed(2)}MB`)
+    return {
+      blob: pngBlob,
+      quality: 1.0,
+      originalSize,
+      compressedSize: pngBlob.size
+    }
+  }
+  
+  console.log(`PNG too large (${(pngBlob.size / 1024 / 1024).toFixed(2)}MB), using WebP compression...`)
+  
+  // Step 2: Use WebP compression with binary search for optimal quality
+  let quality = MAX_QUALITY
+  let bestQuality = MAX_QUALITY
+  let bestWebpBlob: Blob | null = null
+  let bestSize = pngBlob.size
+  
   let lowQuality = MIN_QUALITY
   let highQuality = MAX_QUALITY
-  let bestQuality = MAX_QUALITY
   
-  while (highQuality - lowQuality > 0.01) {
+  while (highQuality - lowQuality > 0.02) {
     quality = (lowQuality + highQuality) / 2
     
-    // Convert canvas to blob with current quality
-    compressedBlob = await new Promise<Blob | null>((resolve) => {
+    // Compress using WebP (which supports quality parameter)
+    const webpBlob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(
         (blob) => resolve(blob),
-        'image/png',
+        'image/webp',
         quality
       )
     })
     
-    if (!compressedBlob) {
-      throw new Error('Failed to compress image')
+    if (!webpBlob) {
+      throw new Error('Failed to create WebP blob')
     }
     
-    compressedSize = compressedBlob.size
+    // Convert WebP back to PNG to check final size
+    const testPngBlob = await convertToPng(webpBlob)
     
-    if (compressedSize <= maxSizeBytes) {
-      // This quality works, try higher quality
+    if (testPngBlob.size <= maxSizeBytes) {
+      // This quality works, save it and try higher quality
       bestQuality = quality
+      bestWebpBlob = webpBlob
+      bestSize = testPngBlob.size
       lowQuality = quality
     } else {
       // Too large, need lower quality
@@ -122,59 +189,46 @@ export async function compressImageToSizeLimit(
     }
   }
   
-  // Final compression with best quality found
-  if (compressedSize > maxSizeBytes || bestQuality !== quality) {
-    compressedBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob),
-        'image/png',
-        bestQuality
-      )
-    })
-    
-    if (!compressedBlob) {
-      throw new Error('Failed to compress image')
-    }
-    
-    compressedSize = compressedBlob.size
-    quality = bestQuality
-  }
-  
-  // If still too large after all attempts, use minimum quality
-  if (compressedSize > maxSizeBytes) {
-    compressedBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (blob) => resolve(blob),
-        'image/png',
-        MIN_QUALITY
-      )
-    })
-    
-    if (!compressedBlob) {
-      throw new Error('Failed to compress image')
-    }
-    
-    compressedSize = compressedBlob.size
-    quality = MIN_QUALITY
-    
-    // If still too large, warn but return the best we can do
-    if (compressedSize > maxSizeBytes) {
-      console.warn(
-        `Image could not be compressed below ${maxSizeBytes} bytes. ` +
-        `Final size: ${compressedSize} bytes (${(compressedSize / 1024 / 1024).toFixed(2)}MB)`
-      )
+  // Step 3: Use the best quality found, or try minimum quality
+  if (bestWebpBlob && bestSize <= maxSizeBytes) {
+    const finalPngBlob = await convertToPng(bestWebpBlob)
+    console.log(`Compressed via WebP (quality: ${bestQuality.toFixed(2)}): ${(finalPngBlob.size / 1024 / 1024).toFixed(2)}MB`)
+    return {
+      blob: finalPngBlob,
+      quality: bestQuality,
+      originalSize,
+      compressedSize: finalPngBlob.size
     }
   }
   
-  // Final safety check - this should never happen due to earlier checks, but satisfies TypeScript
-  if (!compressedBlob) {
-    throw new Error('Failed to compress image: blob is null')
+  // Try minimum quality
+  const minWebpBlob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(
+      (blob) => resolve(blob),
+      'image/webp',
+      MIN_QUALITY
+    )
+  })
+  
+  if (!minWebpBlob) {
+    throw new Error('Failed to create WebP blob at minimum quality')
+  }
+  
+  const finalPngBlob = await convertToPng(minWebpBlob)
+  
+  if (finalPngBlob.size > maxSizeBytes) {
+    console.warn(
+      `Image could not be compressed below ${(maxSizeBytes / 1024 / 1024).toFixed(2)}MB. ` +
+      `Final size: ${(finalPngBlob.size / 1024 / 1024).toFixed(2)}MB`
+    )
+  } else {
+    console.log(`Compressed via WebP (quality: ${MIN_QUALITY}): ${(finalPngBlob.size / 1024 / 1024).toFixed(2)}MB`)
   }
   
   return {
-    blob: compressedBlob,
-    quality,
+    blob: finalPngBlob,
+    quality: MIN_QUALITY,
     originalSize,
-    compressedSize
+    compressedSize: finalPngBlob.size
   }
 }
