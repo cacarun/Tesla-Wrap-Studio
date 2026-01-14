@@ -61,13 +61,15 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
   const canRedo = historyIndex < history.length - 1;
   const isModelYLongRange = currentModelId === 'modely-l';
 
-  // Generate export filename from project name
+  // Generate export filename from project name (max 30 characters)
   const getExportFilename = () => {
     const sanitizedName = projectName
       .replace(/[^a-zA-Z0-9\s-_]/g, '')
       .replace(/\s+/g, '_')
       .toLowerCase();
-    return `${sanitizedName}_${currentModel.folderName}.png`;
+    // Limit to 30 characters (excluding .png extension)
+    const truncatedName = sanitizedName.length > 30 ? sanitizedName.substring(0, 30) : sanitizedName;
+    return `${truncatedName}.png`;
   };
 
   const handleExport = () => {

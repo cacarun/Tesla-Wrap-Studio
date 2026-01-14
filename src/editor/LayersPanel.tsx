@@ -248,12 +248,12 @@ export const LayersPanel = () => {
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={baseColor}
+                value={baseColor === 'transparent' ? '#F5F5F0' : baseColor}
                 onChange={(e) => setBaseColor(e.target.value)}
                 className="h-8 w-8 rounded-full cursor-pointer color-circle"
                 style={{
-                  backgroundColor: baseColor,
-                  border: 'none',
+                  backgroundColor: baseColor === 'transparent' ? 'transparent' : baseColor,
+                  border: baseColor === 'transparent' ? '2px dashed #666' : 'none',
                   padding: 0,
                   appearance: 'none',
                   WebkitAppearance: 'none',
@@ -262,6 +262,26 @@ export const LayersPanel = () => {
                 title="Base color"
                 aria-label="Base color"
               />
+              <button
+                onClick={() => setBaseColor(baseColor === 'transparent' ? '#F5F5F0' : 'transparent')}
+                className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${
+                  baseColor === 'transparent'
+                    ? 'bg-white/10 border-2 border-tesla-red'
+                    : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                }`}
+                title={baseColor === 'transparent' ? 'Make base color opaque' : 'Make base color transparent'}
+                aria-label={baseColor === 'transparent' ? 'Make base color opaque' : 'Make base color transparent'}
+              >
+                {baseColor === 'transparent' ? (
+                  <svg className="w-4 h-4 text-tesla-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16M4 20L20 4" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>

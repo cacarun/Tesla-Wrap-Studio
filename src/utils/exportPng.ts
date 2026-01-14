@@ -58,6 +58,17 @@ export const exportPng = (stage: Stage | null, filename: string): void => {
     }
   });
   
+  // Hide checkerboard pattern (Rectangles with fill #D7DCDD or #B9BEC1 used for transparency indication)
+  const allRects = stage.find('Rect');
+  allRects.forEach(rectNode => {
+    const fill = (rectNode as any).fill();
+    // CheckerboardPattern uses these specific colors
+    if (fill === '#D7DCDD' || fill === '#B9BEC1') {
+      elementsToHide.push({ node: rectNode, wasVisible: rectNode.visible() });
+      rectNode.visible(false);
+    }
+  });
+  
   // Force redraw to apply visibility changes
   stage.batchDraw();
 

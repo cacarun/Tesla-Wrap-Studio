@@ -42,7 +42,7 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
     setSelectedColor(color);
   };
 
-  const isCustomColor = !factoryColors.some(c => c.color === selectedColor);
+  const isCustomColor = !factoryColors.some(c => c.color === selectedColor) && selectedColor !== 'transparent';
 
   const handleCreate = () => {
     if (!selectedModelId) return;
@@ -189,6 +189,33 @@ export const NewProjectDialog = ({ isOpen, onClose }: NewProjectDialogProps) => 
                   </button>
                 </Tooltip>
               ))}
+              {/* Transparent option */}
+              <Tooltip title="Transparent" placement="top" arrow>
+                <button
+                  onClick={() => handleSelectColor('transparent')}
+                  className={`w-8 h-8 rounded-lg transition-all duration-150 focus:outline-none border-2 ${
+                    selectedColor === 'transparent'
+                      ? 'ring-2 ring-tesla-red ring-offset-2 ring-offset-[#1c1c1e] scale-105 border-tesla-red'
+                      : 'ring-1 ring-white/10 hover:scale-105 border-white/20'
+                  }`}
+                  style={{ 
+                    background: 'repeating-conic-gradient(#1c1c1e 0% 25%, #252527 0% 50%) 50% / 8px 8px',
+                    backgroundColor: 'transparent'
+                  }}
+                  aria-label="Transparent"
+                >
+                  {selectedColor === 'transparent' && (
+                    <svg 
+                      className="w-4 h-4 mx-auto text-tesla-red" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              </Tooltip>
               {/* Custom color picker */}
               <Tooltip title="Custom Color" placement="top" arrow>
                 <label className="relative cursor-pointer">

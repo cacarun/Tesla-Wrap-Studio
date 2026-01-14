@@ -17,6 +17,7 @@ import { BrushTool } from './components/BrushTool';
 import { FillTool } from './components/FillTool';
 import { BrushCursor } from './components/BrushCursor';
 import { LineEndpointHandles } from './components/LineEndpointHandles';
+import { CheckerboardPattern } from './components/CheckerboardPattern';
 import { loadImage } from '../utils/image';
 import { carModels } from '../data/carModels';
 import { getTemplateUrl } from '../utils/assets';
@@ -731,10 +732,22 @@ export const EditorCanvas = forwardRef<StageType | null, EditorCanvasProps>(({ o
           <Layer>
             {/* Base color masked by template */}
             <Group>
-              <Rect x={0} y={0} width={1024} height={1024} fill={baseColor} listening={false} />
-              <Group globalCompositeOperation="destination-in" listening={false}>
-                <KonvaImage x={0} y={0} width={1024} height={1024} image={templateImage} />
-              </Group>
+              {/* Show checkerboard pattern when base color is transparent */}
+              {baseColor === 'transparent' ? (
+                <Group>
+                  <CheckerboardPattern width={1024} height={1024} tileSize={32} />
+                  <Group globalCompositeOperation="destination-in" listening={false}>
+                    <KonvaImage x={0} y={0} width={1024} height={1024} image={templateImage} />
+                  </Group>
+                </Group>
+              ) : (
+                <>
+                  <Rect x={0} y={0} width={1024} height={1024} fill={baseColor} listening={false} />
+                  <Group globalCompositeOperation="destination-in" listening={false}>
+                    <KonvaImage x={0} y={0} width={1024} height={1024} image={templateImage} />
+                  </Group>
+                </>
+              )}
             </Group>
 
             {/* Masked design layers */}
