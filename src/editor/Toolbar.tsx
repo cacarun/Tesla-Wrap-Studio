@@ -4,6 +4,7 @@ import { useEditorStore } from './state/useEditorStore';
 import { ModelSelector } from './components/ModelSelector';
 import { DownloadDialog } from './components/DownloadDialog';
 import { InfoDialog } from './components/InfoDialog';
+import { ProfileMenu } from '../components/ProfileMenu';
 import { exportPng } from '../utils/exportPng';
 import { carModels } from '../data/carModels';
 import logo from '../assets/logo.png';
@@ -113,6 +114,11 @@ export const Toolbar = ({ stageRef, onOpen3DPreview }: ToolbarProps) => {
               <span className="hidden sm:inline">Export PNG</span>
             </button>
           </Tooltip>
+
+          {/* Profile Menu */}
+          <div className="ml-1 sm:ml-2 pl-1 sm:pl-2 border-l border-tesla-dark/50">
+            <ProfileMenu />
+          </div>
         </div>
       </div>
 

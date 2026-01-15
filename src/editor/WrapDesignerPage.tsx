@@ -1,15 +1,25 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { Stage as StageType } from 'konva/lib/Stage';
 import { EditorCanvas } from './EditorCanvas';
 import { Toolbar } from './Toolbar';
-import { AIPanel } from './components/AIPanel';
+import { ToolsPanel } from './components/ToolsPanel';
 import { GodotViewer } from '../viewer/GodotViewer';
+import { loadStripeReturnContext } from '../utils/stripe';
 
 export const WrapDesignerPage = () => {
   const stageRef = useRef<StageType | null>(null);
   const [show3DPreview, setShow3DPreview] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [autoFit, setAutoFit] = useState(true);
+  const [openAIDialogOnMount, setOpenAIDialogOnMount] = useState(false);
+
+  // Check for Stripe return context on mount
+  useEffect(() => {
+    const context = loadStripeReturnContext();
+    if (context?.openDialog === 'ai') {
+      setOpenAIDialogOnMount(true);
+    }
+  }, []);
 
   // Use auto-fit zoom when autoFit is true, otherwise use manual zoom
   const currentZoom = autoFit ? zoom : zoom;
@@ -23,8 +33,11 @@ export const WrapDesignerPage = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden gap-1 p-1 relative z-0">
-        {/* Left Panel - AI Generator */}
-        <AIPanel />
+        {/* Left Panel - Tools */}
+        <ToolsPanel 
+          openAIDialogOnMount={openAIDialogOnMount}
+          onAIDialogOpened={() => setOpenAIDialogOnMount(false)}
+        />
 
         {/* Center - Canvas */}
         <div className="flex-1 overflow-hidden relative z-0">

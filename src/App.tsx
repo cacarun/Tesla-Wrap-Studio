@@ -1,7 +1,12 @@
+import { AuthProvider } from './contexts/AuthContext';
 import { WrapDesignerPage } from './editor/WrapDesignerPage';
 
 function App() {
-  return <WrapDesignerPage />;
+  return (
+    <AuthProvider>
+      <WrapDesignerPage />
+    </AuthProvider>
+  );
 }
 
 export default App;
